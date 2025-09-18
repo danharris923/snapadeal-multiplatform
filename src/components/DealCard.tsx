@@ -16,9 +16,10 @@ import { DealModal } from './DealModal';
 interface DealCardProps {
   deal: Deal;
   currentUserId?: string;
+  onFilterByStore?: (store: string) => void;
 }
 
-export const DealCard: React.FC<DealCardProps> = ({ deal, currentUserId }) => {
+export const DealCard: React.FC<DealCardProps> = ({ deal, currentUserId, onFilterByStore }) => {
   const [userVote, setUserVote] = useState<'upvote' | 'downvote' | null>(null);
   const [voteCount, setVoteCount] = useState({
     upvotes: deal.upvotes || 0,
@@ -254,6 +255,7 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, currentUserId }) => {
         onClose={() => setIsModalVisible(false)}
         deal={deal}
         currentUserId={currentUserId}
+        onFilterByStore={onFilterByStore}
       />
     </>
   );

@@ -19,11 +19,12 @@ export const affiliateLinks = {
     fashion: 'https://www.amazon.ca/b?node=8604903011&tag=promopenguin-20',
   },
 
-  // ShopStyle Links (Lululemon, Gap, Walmart)
+  // ShopStyle Links (Lululemon, Gap, Walmart, Roxy)
   shopstyle: {
     lululemon: 'https://shopstyle.it/l/cuM9e',
     gap: 'https://shopstyle.it/l/cuNbc',
     walmart: 'https://shopstyle.it/l/cuM9l',
+    roxy: 'https://shopstyle.it/l/cug5r',
   },
 
   // Rakuten/LinkSynergy (Cabelas)
@@ -87,6 +88,14 @@ export const adCopyVariations = {
     'Outdoor deals for indoor people with dreams',
     'Cabela\'s sale: Be prepared (to save money)',
     '🎣 Fishing for compliments? Start with deals',
+  ],
+
+  roxy: [
+    '🏄‍♀️ Roxy: Where beach vibes meet street style',
+    'Surf-inspired fashion for landlocked dreamers',
+    'Roxy sale: Catch the wave of savings',
+    '🌊 Board shorts and good vibes at great prices',
+    'Beach girl aesthetic without the beach girl budget',
   ],
 
   general: [

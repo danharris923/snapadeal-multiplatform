@@ -10,6 +10,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  FlatList,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { CameraService, ImageResult } from '../services/camera';
@@ -32,9 +33,29 @@ export const SnapDealScreen: React.FC<SnapDealScreenProps> = ({ navigation }) =>
   const [dealUrl, setDealUrl] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [storeSuggestions, setStoreSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const categories = DEAL_CATEGORIES;
   const majorStores = getAllStoreNames();
+
+  const handleStoreInputChange = (text: string) => {
+    setStore(text);
+    if (text.length > 0) {
+      const filtered = majorStores.filter(storeName =>
+        storeName.toLowerCase().includes(text.toLowerCase())
+      ).slice(0, 5);
+      setStoreSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  const selectStoreSuggestion = (storeName: string) => {
+    setStore(storeName);
+    setShowSuggestions(false);
+  };
 
   const handleImagePicker = async () => {
     try {
@@ -85,7 +106,17 @@ export const SnapDealScreen: React.FC<SnapDealScreenProps> = ({ navigation }) =>
 
   const handleSubmit = async () => {
     if (!title || !store) {
-      Alert.alert('Error', 'Please fill in at least the title and store');
+      Alert.alert('Error', 'Please fill in the title and store');
+      return;
+    }
+
+    // Require either price or discount percentage
+    const priceNum = price ? parseFloat(price) : null;
+    const originalPriceNum = originalPrice ? parseFloat(originalPrice) : null;
+    const hasDiscount = originalPriceNum && priceNum && originalPriceNum > priceNum;
+
+    if (!priceNum && !hasDiscount) {
+      Alert.alert('Error', 'Please enter either a sale price or both original and sale prices to show a discount');
       return;
     }
 
@@ -203,29 +234,38 @@ export const SnapDealScreen: React.FC<SnapDealScreenProps> = ({ navigation }) =>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Store *</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={store}
-                onValueChange={(itemValue) => setStore(itemValue)}
-                style={styles.picker}
-                dropdownIconColor={theme.colors.foreground}
-                mode="dropdown"
-              >
-                <Picker.Item label="Select a store..." value="" />
-                {majorStores.map((storeName) => (
-                  <Picker.Item key={storeName} label={storeName} value={storeName} />
-                ))}
-                <Picker.Item label="Other (please specify below)" value="other" />
-              </Picker>
-            </View>
-            {store === 'other' && (
-              <TextInput
-                style={[styles.input, { marginTop: theme.spacing.sm }]}
-                placeholder="Enter store name"
-                value={store === 'other' ? '' : store}
-                onChangeText={setStore}
-                placeholderTextColor={theme.colors.mutedForeground}
-              />
+            <TextInput
+              style={styles.input}
+              placeholder="Start typing store name..."
+              value={store}
+              onChangeText={handleStoreInputChange}
+              onFocus={() => {
+                if (store.length > 0) {
+                  const filtered = majorStores.filter(storeName =>
+                    storeName.toLowerCase().includes(store.toLowerCase())
+                  ).slice(0, 5);
+                  setStoreSuggestions(filtered);
+                  setShowSuggestions(filtered.length > 0);
+                }
+              }}
+              placeholderTextColor={theme.colors.mutedForeground}
+            />
+            {showSuggestions && (
+              <View style={styles.suggestionsContainer}>
+                <FlatList
+                  data={storeSuggestions}
+                  keyExtractor={(item) => item}
+                  style={styles.suggestionsList}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.suggestionItem}
+                      onPress={() => selectStoreSuggestion(item)}
+                    >
+                      <Text style={styles.suggestionText}>{item}</Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
             )}
           </View>
 
@@ -421,6 +461,29 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     resizeMode: 'cover',
+  },
+  suggestionsContainer: {
+    position: 'relative',
+    zIndex: 1000,
+  },
+  suggestionsList: {
+    maxHeight: 200,
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderTopWidth: 0,
+    borderBottomLeftRadius: theme.borderRadius.md,
+    borderBottomRightRadius: theme.borderRadius.md,
+  },
+  suggestionItem: {
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  suggestionText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.foreground,
   },
   submitButton: {
     backgroundColor: theme.colors.foreground,

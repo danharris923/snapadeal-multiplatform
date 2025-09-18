@@ -93,7 +93,7 @@ export const CANADIAN_STORES = [
   { name: 'Decathlon', category: 'Sports' },
 
   // Automotive
-  { name: 'Crappy Tire Auto', category: 'Automotive' },
+  { name: 'Canadian Tire Auto', category: 'Automotive' },
   { name: 'Mr. Lube', category: 'Automotive' },
   { name: 'Jiffy Lube', category: 'Automotive' },
   { name: 'Princess Auto', category: 'Automotive' },

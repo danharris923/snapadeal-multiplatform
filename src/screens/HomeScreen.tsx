@@ -14,6 +14,7 @@ import { Deal, User, FilterState } from '../types';
 import { DealCard } from '../components/DealCard';
 import { HamburgerMenu } from '../components/HamburgerMenu';
 import { FiltersMenu } from '../components/FiltersMenu';
+import { CompactFilter } from '../components/CompactFilter';
 import { AdBar } from '../components/AdBar';
 import { theme } from '../utils/theme';
 import { supabase } from '../services/supabase';
@@ -133,35 +134,51 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         fetchFlippDeals({ query: 'sale', limit: 50, page: 1 }),
       ]);
 
-      // Get dynamic affiliate deals (mix every 3-5 real deals)
+      // Get dynamic affiliate deals - ensure we always get some
       const affiliateDeals = getDynamicAffiliateDeals();
+      console.log('Affiliate deals loaded:', affiliateDeals.length);
 
       // Combine all deals and shuffle
       const allRealDeals = [...communityDeals, ...flippDeals];
       const mixedDeals: Deal[] = [];
 
-      // Insert affiliate deals strategically (every 4-6 deals)
-      let realIndex = 0;
-      let affiliateIndex = 0;
-      let dealsUntilAffiliate = Math.floor(Math.random() * 3) + 3; // 3-5 deals before first affiliate
-
-      while (realIndex < allRealDeals.length || affiliateIndex < affiliateDeals.length) {
-        if (dealsUntilAffiliate > 0 && realIndex < allRealDeals.length) {
-          mixedDeals.push(allRealDeals[realIndex]);
-          realIndex++;
-          dealsUntilAffiliate--;
-        } else if (affiliateIndex < affiliateDeals.length) {
-          mixedDeals.push(affiliateDeals[affiliateIndex]);
-          affiliateIndex++;
-          dealsUntilAffiliate = Math.floor(Math.random() * 3) + 4; // 4-6 deals before next affiliate
-        } else {
-          // Add remaining real deals
-          mixedDeals.push(allRealDeals[realIndex]);
-          realIndex++;
+      // Always add at least 1 affiliate deal early in the feed
+      if (affiliateDeals.length > 0) {
+        // Add first 2-3 real deals
+        for (let i = 0; i < Math.min(3, allRealDeals.length); i++) {
+          mixedDeals.push(allRealDeals[i]);
         }
+
+        // Add first affiliate deal
+        mixedDeals.push(affiliateDeals[0]);
+
+        // Continue with strategic mixing for remaining deals
+        let realIndex = 3;
+        let affiliateIndex = 1;
+        let dealsUntilAffiliate = Math.floor(Math.random() * 3) + 4; // 4-6 deals before next affiliate
+
+        while (realIndex < allRealDeals.length || affiliateIndex < affiliateDeals.length) {
+          if (dealsUntilAffiliate > 0 && realIndex < allRealDeals.length) {
+            mixedDeals.push(allRealDeals[realIndex]);
+            realIndex++;
+            dealsUntilAffiliate--;
+          } else if (affiliateIndex < affiliateDeals.length) {
+            mixedDeals.push(affiliateDeals[affiliateIndex]);
+            affiliateIndex++;
+            dealsUntilAffiliate = Math.floor(Math.random() * 3) + 4; // 4-6 deals before next affiliate
+          } else {
+            // Add remaining real deals
+            mixedDeals.push(allRealDeals[realIndex]);
+            realIndex++;
+          }
+        }
+      } else {
+        // No affiliate deals, just use real deals
+        mixedDeals.push(...allRealDeals);
       }
 
-      setDeals(shuffleArray(mixedDeals));
+      console.log('Total mixed deals:', mixedDeals.length, 'Affiliate deals:', affiliateDeals.length);
+      setDeals(mixedDeals);
       setHasMoreDeals(true);
       setCurrentPage(1);
     } catch (error) {
@@ -220,7 +237,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
     // Apply other filters
     if (filters.source !== 'all') {
-      filtered = filtered.filter((deal) => deal.source === filters.source);
+      if (filters.source === 'online') {
+        // Filter for affiliate deals (disguised as community but with specific IDs)
+        filtered = filtered.filter((deal) =>
+          deal.source === 'community' && deal.id.startsWith('aff-')
+        );
+      } else if (filters.source === 'flipp') {
+        // Filter for Flipp deals
+        filtered = filtered.filter((deal) => deal.source === 'flipp');
+      } else if (filters.source === 'community') {
+        // Filter for real community deals (not affiliate)
+        filtered = filtered.filter((deal) =>
+          deal.source === 'community' && !deal.id.startsWith('aff-')
+        );
+      } else {
+        filtered = filtered.filter((deal) => deal.source === filters.source);
+      }
     }
 
     if (filters.categories && filters.categories.length > 0) {
@@ -273,9 +305,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   };
 
+  const handleFilterByStore = (store: string) => {
+    setFilters({
+      ...filters,
+      stores: [store],
+    });
+  };
+
   const renderDealCard = ({ item }: { item: Deal }) => (
     <View style={styles.dealCardContainer}>
-      <DealCard deal={item} currentUserId={user?.id} />
+      <DealCard
+        deal={item}
+        currentUserId={user?.id}
+        onFilterByStore={handleFilterByStore}
+      />
     </View>
   );
 
@@ -369,6 +412,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           </View>
         </View>
       </View>
+
+      {/* Compact Filter Bar */}
+      <CompactFilter
+        filters={filters}
+        onFiltersChange={setFilters}
+      />
 
       {/* Content */}
       <FlatList

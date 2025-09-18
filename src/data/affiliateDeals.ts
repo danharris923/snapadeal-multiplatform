@@ -13,7 +13,7 @@ export const affiliateDeals: Deal[] = [
     discount_percentage: 13,
     store: 'Amazon',
     category: 'Electronics',
-    image_url: 'https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?w=500', // AirPods
+    image_url: 'https://logo.clearbit.com/amazon.com',
     deal_url: affiliateLinks.amazon.electronics,
     source: 'community', // Disguised as community deal
     upvotes: 45,
@@ -31,7 +31,7 @@ export const affiliateDeals: Deal[] = [
     discount_percentage: 29,
     store: 'Amazon',
     category: 'Fashion',
-    image_url: 'https://images.unsplash.com/photo-1506629905607-cc4ac48b7e50?w=500', // Sports bra
+    image_url: 'https://logo.clearbit.com/amazon.com',
     deal_url: affiliateLinks.amazon.fashion,
     source: 'community',
     upvotes: 23,
@@ -49,7 +49,7 @@ export const affiliateDeals: Deal[] = [
     discount_percentage: 33,
     store: 'Walmart',
     category: 'Home & Kitchen',
-    image_url: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=500', // Instant Pot
+    image_url: 'https://logo.clearbit.com/walmart.com',
     deal_url: affiliateLinks.shopstyle.walmart,
     source: 'community',
     upvotes: 67,
@@ -67,7 +67,7 @@ export const affiliateDeals: Deal[] = [
     discount_percentage: 31,
     store: 'Lululemon',
     category: 'Fashion',
-    image_url: 'https://images.unsplash.com/photo-1506629905607-cc4ac48b7e50?w=500', // Yoga pants
+    image_url: 'https://logo.clearbit.com/lululemon.com',
     deal_url: affiliateLinks.shopstyle.lululemon,
     source: 'community',
     upvotes: 89,
@@ -85,7 +85,7 @@ export const affiliateDeals: Deal[] = [
     discount_percentage: 42,
     store: 'Gap',
     category: 'Fashion',
-    image_url: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=500', // Sweatshirt
+    image_url: 'https://logo.clearbit.com/gap.com',
     deal_url: affiliateLinks.shopstyle.gap,
     source: 'community',
     upvotes: 31,
@@ -103,7 +103,7 @@ export const affiliateDeals: Deal[] = [
     discount_percentage: 39,
     store: 'Cabela\'s',
     category: 'Outdoor & Sports',
-    image_url: 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=500', // Outdoor jacket
+    image_url: 'https://logo.clearbit.com/cabelas.com',
     deal_url: affiliateLinks.rakuten.cabelas,
     source: 'community',
     upvotes: 28,
@@ -121,7 +121,7 @@ export const affiliateDeals: Deal[] = [
     discount_percentage: 38,
     store: 'Amazon',
     category: 'Home & Kitchen',
-    image_url: 'https://images.unsplash.com/photo-1570197788417-0e82375c9371?w=500', // Blender
+    image_url: 'https://logo.clearbit.com/amazon.com',
     deal_url: affiliateLinks.amazon.lightningDeals,
     source: 'community',
     upvotes: 52,
@@ -139,12 +139,30 @@ export const affiliateDeals: Deal[] = [
     discount_percentage: 26,
     store: 'Amazon',
     category: 'Beauty & Health',
-    image_url: 'https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?w=500', // Skincare
+    image_url: 'https://logo.clearbit.com/amazon.com',
     deal_url: affiliateLinks.amazon.todaysDeals,
     source: 'community',
     upvotes: 34,
     score: 34,
     created_at: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(), // 7 hours ago
+  },
+
+  // Roxy Fashion
+  {
+    id: 'aff-roxy-fashion-1',
+    title: 'Roxy Surf & Beach Collection',
+    description: 'Surf-inspired fashion for the ultimate beach lifestyle',
+    price: 45.99,
+    original_price: 69.99,
+    discount_percentage: 34,
+    store: 'Roxy',
+    category: 'Fashion',
+    image_url: 'https://logo.clearbit.com/roxy.com',
+    deal_url: affiliateLinks.shopstyle.roxy,
+    source: 'community',
+    upvotes: 42,
+    score: 42,
+    created_at: new Date(Date.now() - 45 * 60 * 1000).toISOString(), // 45 minutes ago
   },
 ];
 
@@ -163,6 +181,7 @@ export const getAffiliateDealsByCategory = (category: string): Deal[] => {
 
 // Function to update deal titles with dynamic ad copy
 export const getDynamicAffiliateDeals = (): Deal[] => {
+  console.log('Loading affiliate deals, count:', affiliateDeals.length);
   return affiliateDeals.map(deal => {
     // Use dynamic ad copy for some stores
     if (deal.store === 'Amazon' && Math.random() > 0.7) {
@@ -181,6 +200,12 @@ export const getDynamicAffiliateDeals = (): Deal[] => {
       return {
         ...deal,
         description: getRandomAdCopy('walmart'),
+      };
+    }
+    if (deal.store === 'Roxy' && Math.random() > 0.7) {
+      return {
+        ...deal,
+        description: getRandomAdCopy('roxy'),
       };
     }
     return deal;
