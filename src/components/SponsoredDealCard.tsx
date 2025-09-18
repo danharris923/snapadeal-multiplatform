@@ -103,8 +103,8 @@ const styles = StyleSheet.create({
     paddingTop: theme.spacing.sm,
   },
   discount: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.bold,
     color: theme.colors.foreground,
     marginBottom: theme.spacing.xs,
   },
