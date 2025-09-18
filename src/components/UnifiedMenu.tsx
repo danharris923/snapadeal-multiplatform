@@ -423,6 +423,7 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
                 <Text style={[styles.footerLink, styles.signOutLink]}>Sign Out</Text>
               </TouchableOpacity>
             )}
+            <Text style={styles.versionText}>ver# 20250918_1045</Text>
           </View>
 
           <View style={styles.bottomPadding} />
@@ -722,5 +723,12 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: theme.spacing.xl,
+  },
+  versionText: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.mutedForeground,
+    textAlign: 'center',
+    marginTop: theme.spacing.sm,
+    fontFamily: 'monospace',
   },
 });

@@ -18,6 +18,7 @@ import { theme } from '../utils/theme';
 import { supabase } from '../services/supabase';
 import { gamificationService } from '../services/gamification';
 import { DEAL_CATEGORIES, getAllStoreNames } from '../data/canadianData';
+import RNFS from 'react-native-fs';
 
 interface SnapDealScreenProps {
   navigation: any;
@@ -70,36 +71,37 @@ export const SnapDealScreen: React.FC<SnapDealScreenProps> = ({ navigation }) =>
 
   const uploadImageToSupabase = async (localUri: string, userId: string): Promise<string | null> => {
     try {
-      // Create a unique filename
       const fileExt = localUri.split('.').pop() || 'jpg';
       const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `${userId}/${fileName}`;
 
-      // Convert URI to blob
-      const response = await fetch(localUri);
-      const blob = await response.blob();
+      // Read file as base64 using react-native-fs
+      const fileBase64 = await RNFS.readFile(localUri, 'base64');
 
-      // Upload to Supabase storage
+      // Convert base64 to Uint8Array
+      const binaryString = atob(fileBase64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
       const { data, error } = await supabase.storage
         .from('deal-images')
-        .upload(filePath, blob, {
+        .upload(filePath, bytes, {
           contentType: `image/${fileExt}`,
           upsert: false
         });
 
       if (error) {
-        console.error('Upload error:', error);
         return null;
       }
 
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('deal-images')
         .getPublicUrl(filePath);
 
       return publicUrl;
     } catch (error) {
-      console.error('Error uploading image:', error);
       return null;
     }
   };
@@ -139,8 +141,6 @@ export const SnapDealScreen: React.FC<SnapDealScreenProps> = ({ navigation }) =>
         }
       }
 
-      const priceNum = price ? parseFloat(price) : null;
-      const originalPriceNum = originalPrice ? parseFloat(originalPrice) : null;
       const discountPercentage =
         priceNum && originalPriceNum && originalPriceNum > priceNum
           ? Math.round(((originalPriceNum - priceNum) / originalPriceNum) * 100)

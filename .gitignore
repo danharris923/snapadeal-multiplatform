@@ -73,3 +73,21 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Environment variables & secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+setupStorage.js
+*.key
+*.pem
+
+# APK files
+*.apk
+
+# Screenshots for testing
+*.png
+app_*.png
+*_screen*.png

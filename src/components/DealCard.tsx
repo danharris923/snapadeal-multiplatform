@@ -141,11 +141,11 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, currentUserId, onFilte
             source={{ uri: deal.image_url }}
             style={styles.image}
             resizeMode="contain"
-            onError={() => {
-              console.log('Image failed to load:', deal.image_url);
+            onError={(e) => {
+              console.log('Image failed to load, length:', deal.image_url?.length, 'Error:', e.nativeEvent?.error);
             }}
             onLoad={() => {
-              console.log('Image loaded successfully:', deal.image_url);
+              console.log('Image loaded successfully, is base64:', deal.image_url?.startsWith('data:image'));
             }}
           />
         ) : (
