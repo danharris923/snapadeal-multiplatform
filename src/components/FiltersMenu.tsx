@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  SafeAreaView,
+  Dimensions,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { theme } from '../utils/theme';
@@ -24,6 +26,8 @@ export const FiltersMenu: React.FC<FiltersMenuProps> = ({
   filters,
   onFiltersChange,
 }) => {
+  const { width } = Dimensions.get('window');
+  const isNarrowScreen = width < 380; // Pixel 7 Pro and similar
   const categories = [
     'Electronics',
     'Groceries',
@@ -128,15 +132,17 @@ export const FiltersMenu: React.FC<FiltersMenuProps> = ({
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="formSheet">
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Filters</Text>
-          <View style={styles.headerButtons}>
-            <TouchableOpacity style={styles.clearButton} onPress={clearAllFilters}>
-              <Text style={styles.clearButtonText}>Clear All</Text>
+        <View style={[styles.header, isNarrowScreen && styles.headerNarrow]}>
+          <Text style={[styles.headerTitle, isNarrowScreen && styles.headerTitleNarrow]}>Filters</Text>
+          <View style={[styles.headerButtons, isNarrowScreen && styles.headerButtonsNarrow]}>
+            <TouchableOpacity style={[styles.clearButton, isNarrowScreen && styles.clearButtonNarrow]} onPress={clearAllFilters}>
+              <Text style={[styles.clearButtonText, isNarrowScreen && styles.clearButtonTextNarrow]}>
+                {isNarrowScreen ? 'Clear' : 'Clear All'}
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+            <TouchableOpacity style={[styles.closeButton, isNarrowScreen && styles.closeButtonNarrow]} onPress={onClose}>
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
           </View>
@@ -245,7 +251,7 @@ export const FiltersMenu: React.FC<FiltersMenuProps> = ({
             <Text style={styles.applyButtonText}>Apply Filters</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 };
@@ -259,39 +265,45 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: theme.spacing.lg,
-    paddingTop: theme.spacing.xl,
+    padding: theme.spacing.md,
+    paddingTop: theme.spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
+    minHeight: 60,
   },
   headerTitle: {
-    fontSize: theme.fontSize.xl,
+    fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.foreground,
+    flex: 1,
+    marginRight: theme.spacing.sm,
   },
   headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
+    flexShrink: 0,
   },
   clearButton: {
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
     borderRadius: theme.borderRadius.sm,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: theme.colors.foreground,
+    minWidth: 60,
   },
   clearButtonText: {
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.xs,
     color: theme.colors.foreground,
     fontWeight: theme.fontWeight.medium,
+    textAlign: 'center',
   },
   closeButton: {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     borderRadius: theme.borderRadius.full,
     backgroundColor: theme.colors.background,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: theme.colors.foreground,
     justifyContent: 'center',
     alignItems: 'center',
@@ -363,5 +375,26 @@ const styles = StyleSheet.create({
     color: theme.colors.background,
     fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.semibold,
+  },
+  // Narrow screen adjustments
+  headerNarrow: {
+    paddingHorizontal: theme.spacing.sm,
+  },
+  headerTitleNarrow: {
+    fontSize: theme.fontSize.md,
+  },
+  headerButtonsNarrow: {
+    gap: theme.spacing.xs,
+  },
+  clearButtonNarrow: {
+    paddingHorizontal: theme.spacing.xs,
+    minWidth: 45,
+  },
+  clearButtonTextNarrow: {
+    fontSize: 10,
+  },
+  closeButtonNarrow: {
+    width: 24,
+    height: 24,
   },
 });

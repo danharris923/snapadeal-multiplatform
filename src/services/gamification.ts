@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { UserStats, Achievement, VoteAction } from '../types';
+import { advancedRankingService } from './advancedRanking';
 
 // Points system configuration
 export const POINTS_CONFIG = {
@@ -128,7 +129,7 @@ class GamificationService {
     }
   }
 
-  // Award points for deal posting
+  // Award points for deal posting with ELO rating update
   async awardDealPostPoints(userId: string, dealValue: number = 0): Promise<void> {
     try {
       const stats = await this.getUserStats(userId);
@@ -146,6 +147,10 @@ class GamificationService {
         pointsToAward += POINTS_CONFIG.HIGH_VALUE_DEAL;
       }
 
+      // Calculate ELO rating (stored in points field for now)
+      // Higher value deals get better "performance" score
+      const dealPerformance = Math.min(1.0, dealValue / 100); // Normalize to 0-1
+
       const newStats = {
         points: stats.points + pointsToAward,
         deals_posted: stats.deals_posted + 1,
@@ -158,6 +163,9 @@ class GamificationService {
         .from('user_stats')
         .update(newStats)
         .eq('user_id', userId);
+
+      // Update ELO-style rating based on deal value
+      await advancedRankingService.updateUserRating(userId, dealPerformance);
 
       // Check for achievements
       await this.checkAchievements(userId, { ...stats, ...newStats });
@@ -207,8 +215,11 @@ class GamificationService {
         }
       }
 
-      // Update deal score
+      // Update deal score with advanced ranking
       await this.updateDealScore(dealId);
+
+      // Calculate advanced ranking scores
+      await advancedRankingService.calculateDealRanking(dealId);
 
     } catch (error) {
       console.error('Error handling vote:', error);
@@ -324,9 +335,30 @@ class GamificationService {
     return newAchievements;
   }
 
-  // Get leaderboard
+  // Get leaderboard with ELO ratings
   async getLeaderboard(limit: number = 10): Promise<UserStats[]> {
     try {
+      // Try to get advanced leaderboard first
+      const advancedLeaderboard = await advancedRankingService.getUserLeaderboard(limit);
+
+      if (advancedLeaderboard.length > 0) {
+        // Map advanced ratings to UserStats format
+        return advancedLeaderboard.map((rating, index) => ({
+          user_id: rating.user_id,
+          points: rating.elo_rating, // Use ELO as points
+          level: this.calculateLevel(rating.elo_rating),
+          deals_posted: rating.deals_posted,
+          total_upvotes_received: 0, // Will be calculated
+          total_deals_value: rating.total_deal_value || 0,
+          achievements: [],
+          last_updated: rating.last_updated,
+          rank: index + 1,
+          elo_rating: rating.elo_rating,
+          reputation_score: rating.reputation_score,
+        }));
+      }
+
+      // Fallback to simple leaderboard
       const { data, error } = await supabase
         .from('user_stats')
         .select(`
@@ -395,6 +427,42 @@ class GamificationService {
     } catch (error) {
       console.error('Error getting user vote:', error);
       return null;
+    }
+  }
+
+  // Get trending deals using advanced ranking
+  async getTrendingDeals(limit: number = 20): Promise<any[]> {
+    try {
+      // Try advanced ranking first
+      const trendingDeals = await advancedRankingService.getTrendingDeals(limit);
+
+      if (trendingDeals.length > 0) {
+        return trendingDeals;
+      }
+
+      // Fallback to simple ranking by votes and time
+      const { data, error } = await supabase
+        .from('deals')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+
+      // Simple hot score calculation for fallback
+      return (data || [])
+        .map(deal => {
+          const ageInHours = (Date.now() - new Date(deal.created_at).getTime()) / (1000 * 60 * 60);
+          const score = (deal.upvotes || 0) - (deal.downvotes || 0);
+          const hotScore = score / Math.pow(ageInHours + 2, 1.8);
+          return { ...deal, hot_score: hotScore };
+        })
+        .sort((a, b) => b.hot_score - a.hot_score);
+
+    } catch (error) {
+      console.error('Error getting trending deals:', error);
+      return [];
     }
   }
 }
