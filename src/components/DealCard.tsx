@@ -11,6 +11,7 @@ import { Deal } from '../types';
 import { theme } from '../utils/theme';
 import { gamificationService } from '../services/gamification';
 import { supabase } from '../services/supabase';
+import { DealModal } from './DealModal';
 
 interface DealCardProps {
   deal: Deal;
@@ -25,6 +26,7 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, currentUserId }) => {
     score: deal.score || 0,
   });
   const [isVoting, setIsVoting] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   useEffect(() => {
     if (currentUserId && deal.id) {
@@ -108,6 +110,10 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, currentUserId }) => {
     }
   };
 
+  const handleCardPress = () => {
+    setIsModalVisible(true);
+  };
+
   const safeTitle = String(deal.title || 'Product');
   const safeDescription = String(deal.description || '');
   const safeStore = String(deal.store || 'Store');
@@ -116,35 +122,54 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, currentUserId }) => {
   const safeOriginalPrice = typeof deal.original_price === 'number' ? deal.original_price : 0;
   const safeDiscount = typeof deal.discount_percentage === 'number' ? deal.discount_percentage : 0;
 
+  // For Flipp deals, extract price range from description if no price is set
+  const extractPriceRange = (text: string) => {
+    const priceRangeMatch = text.match(/\$?(\d+\.?\d*)\s*[-–]\s*\$?(\d+\.?\d*)/);
+    return priceRangeMatch ? `$${priceRangeMatch[1]}-$${priceRangeMatch[2]}` : null;
+  };
+
+  const priceRange = (safePrice === 0 && safeDescription) ?
+    extractPriceRange(safeDescription) || extractPriceRange(safeTitle) : null;
+
   return (
-    <View style={styles.card}>
-      {deal.image_url && typeof deal.image_url === 'string' && (
-        <View style={styles.imageContainer}>
+    <>
+      <TouchableOpacity style={styles.card} onPress={handleCardPress} activeOpacity={0.95}>
+      <View style={styles.imageContainer}>
+        {deal.image_url && typeof deal.image_url === 'string' && deal.image_url.trim() !== '' ? (
           <Image
             source={{ uri: deal.image_url }}
             style={styles.image}
             resizeMode="contain"
+            onError={() => {
+              console.log('Image failed to load:', deal.image_url);
+            }}
+            onLoad={() => {
+              console.log('Image loaded successfully:', deal.image_url);
+            }}
           />
-          {safeDiscount > 0 && (
-            <View style={styles.discountBadge}>
-              <Text style={styles.discountText}>
-                {String(safeDiscount)}% OFF
-              </Text>
+        ) : (
+          <>
+            {console.log('No image URL for deal:', deal.title, 'image_url:', deal.image_url, 'source:', deal.source)}
+            <View style={styles.placeholderImage}>
+              <Text style={styles.placeholderText}>📦</Text>
+              <Text style={styles.placeholderLabel}>Deal</Text>
             </View>
-          )}
-        </View>
-      )}
+          </>
+        )}
+        {safeDiscount > 0 && (
+          <View style={styles.discountBadge}>
+            <Text style={styles.discountText}>
+              {String(safeDiscount)}% OFF
+            </Text>
+          </View>
+        )}
+      </View>
 
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title} numberOfLines={2}>
             {safeTitle}
           </Text>
-          <View style={styles.sourceBadge}>
-            <Text style={styles.sourceText}>
-              {deal.source === 'community' ? 'Community' : 'Flipp'}
-            </Text>
-          </View>
         </View>
 
         {safeDescription && (
@@ -162,13 +187,19 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, currentUserId }) => {
 
         <View style={styles.footer}>
           <View style={styles.priceContainer}>
-            {safePrice > 0 && (
-              <Text style={styles.price}>${safePrice.toFixed(2)}</Text>
-            )}
-            {safeOriginalPrice > safePrice && (
-              <Text style={styles.originalPrice}>
-                ${safeOriginalPrice.toFixed(2)}
-              </Text>
+            {priceRange ? (
+              <Text style={styles.price}>{priceRange}</Text>
+            ) : safePrice > 0 ? (
+              <>
+                <Text style={styles.price}>${safePrice.toFixed(2)}</Text>
+                {safeOriginalPrice > safePrice && (
+                  <Text style={styles.originalPrice}>
+                    ${safeOriginalPrice.toFixed(2)}
+                  </Text>
+                )}
+              </>
+            ) : (
+              <Text style={styles.price}>In Store</Text>
             )}
           </View>
 
@@ -216,7 +247,15 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, currentUserId }) => {
           </View>
         </View>
       </View>
-    </View>
+      </TouchableOpacity>
+
+      <DealModal
+        isVisible={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+        deal={deal}
+        currentUserId={currentUserId}
+      />
+    </>
   );
 };
 
@@ -237,6 +276,22 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
+  },
+  placeholderImage: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: theme.colors.muted,
+  },
+  placeholderText: {
+    fontSize: 32,
+    marginBottom: 4,
+  },
+  placeholderLabel: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.mutedForeground,
+    fontWeight: theme.fontWeight.medium,
   },
   discountBadge: {
     position: 'absolute',
@@ -267,19 +322,6 @@ const styles = StyleSheet.create({
     fontWeight: theme.fontWeight.semibold,
     color: theme.colors.cardForeground,
     marginRight: theme.spacing.sm,
-  },
-  sourceBadge: {
-    backgroundColor: theme.colors.background,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.sm,
-    borderWidth: 1,
-    borderColor: theme.colors.foreground,
-  },
-  sourceText: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.foreground,
-    fontWeight: theme.fontWeight.medium,
   },
   description: {
     fontSize: theme.fontSize.xs,

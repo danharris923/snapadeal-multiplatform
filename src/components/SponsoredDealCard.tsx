@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
 } from 'react-native';
 import { theme } from '../utils/theme';
 import { trackAffiliateClick } from '../config/affiliateLinks';
+import { DealModal } from './DealModal';
+import { Deal } from '../types';
 
 interface SponsoredDealCardProps {
   title: string;
@@ -28,13 +30,35 @@ export const SponsoredDealCard: React.FC<SponsoredDealCardProps> = ({
   dealId,
   color = '#000',
 }) => {
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
   const handlePress = () => {
+    setIsModalVisible(true);
+  };
+
+  const handleViewDeal = () => {
     trackAffiliateClick(dealId, 'sponsored_card');
     Linking.openURL(affiliateUrl);
   };
 
+  // Create a Deal object for the modal
+  const modalDeal: Deal = {
+    id: dealId,
+    title,
+    description: subtitle,
+    store,
+    price: 0, // Parse from discount string if needed
+    original_price: 0,
+    discount_percentage: parseInt(discount.replace(/\D/g, '')) || 0,
+    deal_url: affiliateUrl,
+    source: 'sponsored',
+    category: '',
+    created_at: new Date().toISOString(),
+  };
+
   return (
-    <TouchableOpacity
+    <>
+      <TouchableOpacity
       style={styles.card}
       onPress={handlePress}
       activeOpacity={0.9}
@@ -62,6 +86,13 @@ export const SponsoredDealCard: React.FC<SponsoredDealCardProps> = ({
         </View>
       </View>
     </TouchableOpacity>
+
+      <DealModal
+        isVisible={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+        deal={modalDeal}
+      />
+    </>
   );
 };
 

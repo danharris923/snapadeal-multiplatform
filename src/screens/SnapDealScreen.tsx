@@ -47,6 +47,42 @@ export const SnapDealScreen: React.FC<SnapDealScreenProps> = ({ navigation }) =>
     }
   };
 
+  const uploadImageToSupabase = async (localUri: string, userId: string): Promise<string | null> => {
+    try {
+      // Create a unique filename
+      const fileExt = localUri.split('.').pop() || 'jpg';
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${userId}/${fileName}`;
+
+      // Convert URI to blob
+      const response = await fetch(localUri);
+      const blob = await response.blob();
+
+      // Upload to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('deal-images')
+        .upload(filePath, blob, {
+          contentType: `image/${fileExt}`,
+          upsert: false
+        });
+
+      if (error) {
+        console.error('Upload error:', error);
+        return null;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('deal-images')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    }
+  };
+
   const handleSubmit = async () => {
     if (!title || !store) {
       Alert.alert('Error', 'Please fill in at least the title and store');
@@ -61,6 +97,15 @@ export const SnapDealScreen: React.FC<SnapDealScreenProps> = ({ navigation }) =>
       if (!user) {
         Alert.alert('Error', 'You must be signed in to submit a deal');
         return;
+      }
+
+      // Upload image to Supabase storage if present
+      let uploadedImageUrl = null;
+      if (imageUri) {
+        uploadedImageUrl = await uploadImageToSupabase(imageUri, user.id);
+        if (!uploadedImageUrl) {
+          Alert.alert('Warning', 'Failed to upload image, but deal will be submitted without it');
+        }
       }
 
       const priceNum = price ? parseFloat(price) : null;
@@ -79,7 +124,7 @@ export const SnapDealScreen: React.FC<SnapDealScreenProps> = ({ navigation }) =>
         store,
         category: category || null,
         deal_url: dealUrl || null,
-        image_url: imageUri || null,
+        image_url: uploadedImageUrl || null,
         submitted_by: user.id,
         is_active: true,
       };

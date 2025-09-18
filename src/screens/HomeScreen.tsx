@@ -19,6 +19,7 @@ import { theme } from '../utils/theme';
 import { supabase } from '../services/supabase';
 import { fetchFlippDeals } from '../services/api';
 import { LocationService } from '../services/location';
+import { getRandomAffiliateDeals, getDynamicAffiliateDeals } from '../data/affiliateDeals';
 
 interface HomeScreenProps {
   navigation: any;
@@ -90,6 +91,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         return [];
       }
 
+
       return data?.map((deal) => ({
         id: deal.id,
         title: deal.title,
@@ -131,8 +133,35 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         fetchFlippDeals({ query: 'sale', limit: 50, page: 1 }),
       ]);
 
-      const allDeals = shuffleArray([...communityDeals, ...flippDeals]);
-      setDeals(allDeals);
+      // Get dynamic affiliate deals (mix every 3-5 real deals)
+      const affiliateDeals = getDynamicAffiliateDeals();
+
+      // Combine all deals and shuffle
+      const allRealDeals = [...communityDeals, ...flippDeals];
+      const mixedDeals: Deal[] = [];
+
+      // Insert affiliate deals strategically (every 4-6 deals)
+      let realIndex = 0;
+      let affiliateIndex = 0;
+      let dealsUntilAffiliate = Math.floor(Math.random() * 3) + 3; // 3-5 deals before first affiliate
+
+      while (realIndex < allRealDeals.length || affiliateIndex < affiliateDeals.length) {
+        if (dealsUntilAffiliate > 0 && realIndex < allRealDeals.length) {
+          mixedDeals.push(allRealDeals[realIndex]);
+          realIndex++;
+          dealsUntilAffiliate--;
+        } else if (affiliateIndex < affiliateDeals.length) {
+          mixedDeals.push(affiliateDeals[affiliateIndex]);
+          affiliateIndex++;
+          dealsUntilAffiliate = Math.floor(Math.random() * 3) + 4; // 4-6 deals before next affiliate
+        } else {
+          // Add remaining real deals
+          mixedDeals.push(allRealDeals[realIndex]);
+          realIndex++;
+        }
+      }
+
+      setDeals(shuffleArray(mixedDeals));
       setHasMoreDeals(true);
       setCurrentPage(1);
     } catch (error) {
