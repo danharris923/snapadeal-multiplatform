@@ -118,15 +118,50 @@ class GamificationService {
 
       if (error && error.code === 'PGRST116') {
         // Initialize if doesn't exist
+        console.log(`📊 Initializing new user stats for ${userId}`);
         return await this.initializeUserStats(userId);
       }
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error getting user stats:', error);
+        throw error;
+      }
+
+      console.log(`📊 Retrieved user stats for ${userId}:`, {
+        points: data.points,
+        level: data.level,
+        deals_posted: data.deals_posted,
+        reputation_score: data.reputation_score,
+      });
+
       return data;
     } catch (error) {
       console.error('Error getting user stats:', error);
       return null;
     }
+  }
+
+  // Calculate reputation score based on activity
+  calculateReputationScore(stats: UserStats): number {
+    let reputation = 0;
+
+    // Base points from total points
+    reputation += Math.floor(stats.points / 10);
+
+    // Bonus for upvotes received (quality indicator)
+    reputation += stats.total_upvotes_received * 2;
+
+    // Bonus for deals posted (activity)
+    reputation += stats.deals_posted * 3;
+
+    // Penalty for flagged content
+    const flaggedCount = stats.flagged_posts || 0;
+    if (flaggedCount > 0) {
+      reputation -= flaggedCount * 20;
+    }
+
+    // Never go below 0
+    return Math.max(0, reputation);
   }
 
   // Award points for deal posting with ELO rating update
@@ -151,18 +186,41 @@ class GamificationService {
       // Higher value deals get better "performance" score
       const dealPerformance = Math.min(1.0, dealValue / 100); // Normalize to 0-1
 
-      const newStats = {
+      const updatedStats = {
+        ...stats,
         points: stats.points + pointsToAward,
         deals_posted: stats.deals_posted + 1,
         total_deals_value: stats.total_deals_value + dealValue,
         level: this.calculateLevel(stats.points + pointsToAward),
+      };
+
+      const reputationScore = this.calculateReputationScore(updatedStats);
+
+      const newStats = {
+        points: updatedStats.points,
+        deals_posted: updatedStats.deals_posted,
+        total_deals_value: updatedStats.total_deals_value,
+        level: updatedStats.level,
+        reputation_score: reputationScore,
         last_updated: new Date().toISOString(),
       };
 
-      await supabase
+      const { error: updateError } = await supabase
         .from('user_stats')
         .update(newStats)
         .eq('user_id', userId);
+
+      if (updateError) {
+        console.error('❌ Failed to update user stats:', updateError);
+        throw updateError;
+      }
+
+      console.log(`✅ Updated user stats for ${userId}:`, {
+        points: newStats.points,
+        deals_posted: newStats.deals_posted,
+        reputation_score: newStats.reputation_score,
+        pointsAwarded: pointsToAward,
+      });
 
       // Update ELO-style rating based on deal value
       await advancedRankingService.updateUserRating(userId, dealPerformance);
@@ -232,10 +290,20 @@ class GamificationService {
       const stats = await this.getUserStats(userId);
       if (!stats) return;
 
-      const newStats = {
+      const updatedStats = {
+        ...stats,
         points: stats.points + POINTS_CONFIG.UPVOTE_RECEIVED,
         total_upvotes_received: stats.total_upvotes_received + 1,
         level: this.calculateLevel(stats.points + POINTS_CONFIG.UPVOTE_RECEIVED),
+      };
+
+      const reputationScore = this.calculateReputationScore(updatedStats);
+
+      const newStats = {
+        points: updatedStats.points,
+        total_upvotes_received: updatedStats.total_upvotes_received,
+        level: updatedStats.level,
+        reputation_score: reputationScore,
         last_updated: new Date().toISOString(),
       };
 
@@ -249,6 +317,36 @@ class GamificationService {
 
     } catch (error) {
       console.error('Error awarding upvote received points:', error);
+    }
+  }
+
+  // Penalize user for flagged content
+  async recordFlaggedContent(userId: string): Promise<void> {
+    try {
+      const stats = await this.getUserStats(userId);
+      if (!stats) return;
+
+      const flaggedPosts = (stats.flagged_posts || 0) + 1;
+
+      const updatedStats = {
+        ...stats,
+        flagged_posts: flaggedPosts,
+      };
+
+      const reputationScore = this.calculateReputationScore(updatedStats);
+
+      await supabase
+        .from('user_stats')
+        .update({
+          flagged_posts: flaggedPosts,
+          reputation_score: reputationScore,
+          last_updated: new Date().toISOString(),
+        })
+        .eq('user_id', userId);
+
+      console.log(`⚠️ User ${userId} has ${flaggedPosts} flagged posts, reputation: ${reputationScore}`);
+    } catch (error) {
+      console.error('Error recording flagged content:', error);
     }
   }
 

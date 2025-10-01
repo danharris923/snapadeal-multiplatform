@@ -15,6 +15,11 @@ export interface Deal {
   downvotes?: number;
   score?: number;
   submitted_by?: string;
+  moderation_status?: 'active' | 'hidden' | 'removed';
+  report_count?: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface User {
@@ -55,6 +60,10 @@ export interface UserStats {
   achievements: string[];
   rank?: number;
   last_updated: string;
+  reputation_score?: number;
+  flagged_posts?: number;
+  account_created_at?: string;
+  elo_rating?: number;
 }
 
 export interface Achievement {
@@ -127,4 +136,16 @@ export interface PushNotificationPayload {
     discount?: string;
     distance?: string;
   };
+}
+
+export interface FlaggedContent {
+  id: string;
+  deal_id: string;
+  reported_by: string;
+  reason: 'spam' | 'scam' | 'inappropriate' | 'fake' | 'other';
+  details?: string;
+  status: 'pending' | 'reviewed' | 'dismissed' | 'actioned';
+  created_at: string;
+  reviewed_at?: string;
+  reviewed_by?: string;
 }

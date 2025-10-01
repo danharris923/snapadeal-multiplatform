@@ -17,6 +17,7 @@ import { CameraService, ImageResult } from '../services/camera';
 import { theme } from '../utils/theme';
 import { supabase } from '../services/supabase';
 import { gamificationService } from '../services/gamification';
+import { contentModerationService } from '../services/contentModeration';
 import { DEAL_CATEGORIES, getAllStoreNames } from '../data/canadianData';
 import RNFS from 'react-native-fs';
 
@@ -129,6 +130,26 @@ export const SnapDealScreen: React.FC<SnapDealScreenProps> = ({ navigation }) =>
 
       if (!user) {
         Alert.alert('Error', 'You must be signed in to submit a deal');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Get user reputation for rate limiting
+      const userStats = await gamificationService.getUserStats(user.id);
+      const userReputation = userStats?.points || 0;
+
+      // Validate submission (rate limiting, spam check, etc.)
+      const validation = await contentModerationService.validateDealSubmission(
+        user.id,
+        title,
+        description,
+        dealUrl,
+        userReputation
+      );
+
+      if (!validation.allowed) {
+        Alert.alert('Unable to Submit', validation.message || 'Please try again later');
+        setIsSubmitting(false);
         return;
       }
 
@@ -165,11 +186,21 @@ export const SnapDealScreen: React.FC<SnapDealScreenProps> = ({ navigation }) =>
         .insert([dealData]);
 
       if (error) {
+        console.error('Error submitting deal:', error);
         Alert.alert('Error', 'Failed to submit deal: ' + error.message);
       } else {
+        // Record post for rate limiting
+        await contentModerationService.recordPost(user.id);
+
         // Award points for posting deal
         const dealValue = originalPriceNum && priceNum ? originalPriceNum - priceNum : 0;
-        await gamificationService.awardDealPostPoints(user.id, dealValue);
+        try {
+          await gamificationService.awardDealPostPoints(user.id, dealValue);
+          console.log(`✅ Points awarded to user ${user.id} for deal value $${dealValue}`);
+        } catch (pointsError) {
+          console.error('Error awarding points (non-critical):', pointsError);
+          // Don't block the success flow if points fail
+        }
 
         Alert.alert(
           'Success!',
@@ -178,6 +209,7 @@ export const SnapDealScreen: React.FC<SnapDealScreenProps> = ({ navigation }) =>
         );
       }
     } catch (error) {
+      console.error('Unexpected error during deal submission:', error);
       Alert.alert('Error', 'An unexpected error occurred');
     } finally {
       setIsSubmitting(false);

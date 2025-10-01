@@ -6,10 +6,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   Linking,
+  Alert,
 } from 'react-native';
 import { Deal } from '../types';
 import { theme } from '../utils/theme';
 import { gamificationService } from '../services/gamification';
+import { contentModerationService } from '../services/contentModeration';
 import { supabase } from '../services/supabase';
 import { DealModal } from './DealModal';
 
@@ -28,6 +30,7 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, currentUserId, onFilte
   });
   const [isVoting, setIsVoting] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isReporting, setIsReporting] = useState(false);
 
   useEffect(() => {
     if (currentUserId && deal.id) {
@@ -93,6 +96,66 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, currentUserId, onFilte
       setIsVoting(false);
     }
   };
+
+  const handleReport = async () => {
+    if (!currentUserId || isReporting) return;
+
+    Alert.alert(
+      'Report Deal',
+      'Why are you reporting this deal?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Spam',
+          onPress: () => submitReport('spam'),
+        },
+        {
+          text: 'Scam/Fake',
+          onPress: () => submitReport('scam'),
+        },
+        {
+          text: 'Inappropriate',
+          onPress: () => submitReport('inappropriate'),
+        },
+        {
+          text: 'No Longer Available',
+          onPress: () => submitReport('fake'),
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const submitReport = async (reason: 'spam' | 'scam' | 'inappropriate' | 'fake' | 'other') => {
+    if (!currentUserId) return;
+
+    setIsReporting(true);
+    try {
+      const result = await contentModerationService.reportContent(
+        deal.id,
+        currentUserId,
+        reason
+      );
+
+      if (result.success) {
+        Alert.alert(
+          'Thank You',
+          'Your report has been submitted. Our team will review it shortly.'
+        );
+      } else {
+        Alert.alert('Error', result.error || 'Failed to submit report');
+      }
+    } catch (error) {
+      console.error('Error reporting deal:', error);
+      Alert.alert('Error', 'An unexpected error occurred');
+    } finally {
+      setIsReporting(false);
+    }
+  };
+
   // Safety check for deal data
   if (!deal || typeof deal !== 'object') {
     return (
@@ -204,7 +267,19 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, currentUserId, onFilte
             )}
           </View>
 
-          <View style={styles.actions}>
+          <View style={styles.actionsRow}>
+            {/* Report button for community deals */}
+            {deal.source === 'community' && currentUserId && (
+              <TouchableOpacity
+                style={styles.reportButton}
+                onPress={handleReport}
+                disabled={isReporting}
+              >
+                <Text style={styles.reportButtonText}>⚠️</Text>
+              </TouchableOpacity>
+            )}
+
+            <View style={styles.actions}>
             {/* Voting buttons for community deals */}
             {deal.source === 'community' && currentUserId && (
               <View style={styles.voteContainer}>
@@ -245,6 +320,7 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, currentUserId, onFilte
                 <Text style={styles.viewButtonText}>View Deal</Text>
               </TouchableOpacity>
             )}
+            </View>
           </View>
         </View>
       </View>
@@ -363,11 +439,29 @@ const styles = StyleSheet.create({
     color: theme.colors.mutedForeground,
     textDecorationLine: 'line-through',
   },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+  },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: theme.spacing.sm,
+  },
+  reportButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: theme.colors.muted,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  reportButtonText: {
+    fontSize: 14,
   },
   voteContainer: {
     flexDirection: 'row',
