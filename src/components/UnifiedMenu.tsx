@@ -335,7 +335,7 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
                 <Text style={[styles.footerLink, styles.signOutLink]}>Sign Out</Text>
               </TouchableOpacity>
             )}
-            <Text style={styles.versionText}>ver# 20251001_1406</Text>
+            <Text style={styles.versionText}>ver# 20251001_2204-secure</Text>
           </View>
 
           <View style={styles.bottomPadding} />
