@@ -126,7 +126,7 @@ export async function fetchFlippDeals(params: FlippDealsParams = {}): Promise<De
         headers: {
           'Accept': 'application/json',
           'Accept-Language': 'en-CA',
-          'User-Agent': 'FindersKeepers/1.0 (React Native)',
+          'User-Agent': 'SnapADeal/1.0 (React Native)',
         },
       });
 

@@ -75,7 +75,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
           <View style={styles.logo}>
             <Text style={styles.logoText}>●</Text>
           </View>
-          <Text style={styles.title}>FindersKeepers</Text>
+          <Text style={styles.title}>SnapADeal</Text>
           <Text style={styles.subtitle}>
             {isLogin ? 'Welcome back!' : 'Join the community'}
           </Text>

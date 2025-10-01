@@ -27,7 +27,7 @@ export const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
 
         <View style={styles.section}>
           <Text style={styles.paragraph}>
-            FindersKeepers ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application. This policy complies with the Personal Information Protection and Electronic Documents Act (PIPEDA) and applicable Canadian provincial privacy laws.
+            SnapADeal ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application. This policy complies with the Personal Information Protection and Electronic Documents Act (PIPEDA) and applicable Canadian provincial privacy laws.
           </Text>
         </View>
 
@@ -156,7 +156,7 @@ export const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
             If you have any questions about this Privacy Policy or our privacy practices, please contact us at:
           </Text>
           <Text style={styles.paragraph}>
-            FindersKeepers Privacy Officer{'\n'}
+            SnapADeal Privacy Officer{'\n'}
             Toronto, Ontario, Canada{'\n'}
             privacy@finderskeepers.app{'\n'}
             1-888-DEALS-CA

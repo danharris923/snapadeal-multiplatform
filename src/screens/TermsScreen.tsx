@@ -28,7 +28,7 @@ export const TermsScreen: React.FC<TermsScreenProps> = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>1. ACCEPTANCE OF TERMS</Text>
           <Text style={styles.paragraph}>
-            By accessing and using FindersKeepers ("the App"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service. These terms apply to all users of the App, including without limitation users who are browsers, customers, merchants, and/or contributors of content.
+            By accessing and using SnapADeal ("the App"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service. These terms apply to all users of the App, including without limitation users who are browsers, customers, merchants, and/or contributors of content.
           </Text>
         </View>
 
@@ -49,14 +49,14 @@ export const TermsScreen: React.FC<TermsScreenProps> = ({ navigation }) => {
             Users may post deals, reviews, comments, and other content ("User Content") so long as the content is not illegal, obscene, threatening, defamatory, invasive of privacy, infringing of intellectual property rights, or otherwise injurious to third parties or objectionable, and does not consist of or contain software viruses, political campaigning, commercial solicitation, chain letters, mass mailings, or any form of "spam."
           </Text>
           <Text style={styles.paragraph}>
-            You grant FindersKeepers a non-exclusive, royalty-free, perpetual, irrevocable, and fully sublicensable right to use, reproduce, modify, adapt, publish, translate, create derivative works from, distribute, and display such content throughout Canada and the world in any media.
+            You grant SnapADeal a non-exclusive, royalty-free, perpetual, irrevocable, and fully sublicensable right to use, reproduce, modify, adapt, publish, translate, create derivative works from, distribute, and display such content throughout Canada and the world in any media.
           </Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>4. PRIVACY AND PERSONAL INFORMATION</Text>
           <Text style={styles.paragraph}>
-            Your use of FindersKeepers is also governed by our Privacy Policy. By using the App, you consent to the collection and use of your personal information as outlined in the Privacy Policy, in compliance with the Personal Information Protection and Electronic Documents Act (PIPEDA) and applicable provincial privacy legislation.
+            Your use of SnapADeal is also governed by our Privacy Policy. By using the App, you consent to the collection and use of your personal information as outlined in the Privacy Policy, in compliance with the Personal Information Protection and Electronic Documents Act (PIPEDA) and applicable provincial privacy legislation.
           </Text>
         </View>
 
@@ -75,26 +75,26 @@ export const TermsScreen: React.FC<TermsScreenProps> = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>6. DISCLAIMERS</Text>
           <Text style={styles.paragraph}>
-            The information on FindersKeepers is provided on an "as is" basis. To the fullest extent permitted by law, this App:
+            The information on SnapADeal is provided on an "as is" basis. To the fullest extent permitted by law, this App:
           </Text>
           <Text style={styles.bulletPoint}>• Excludes all representations and warranties relating to this App and its contents</Text>
           <Text style={styles.bulletPoint}>• Excludes all liability for damages arising out of or in connection with your use of this App</Text>
           <Text style={styles.paragraph}>
-            The deals and offers presented on this App are submitted by users and third parties. FindersKeepers does not guarantee the accuracy, completeness, or availability of any deal or offer.
+            The deals and offers presented on this App are submitted by users and third parties. SnapADeal does not guarantee the accuracy, completeness, or availability of any deal or offer.
           </Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>7. LIMITATION OF LIABILITY</Text>
           <Text style={styles.paragraph}>
-            In no event shall FindersKeepers, nor any of its officers, directors, and employees, be liable to you for anything arising out of or in any way connected with your use of this App, whether such liability is under contract, tort or otherwise, and FindersKeepers, including its officers, directors, and employees shall not be liable for any indirect, consequential, or special liability arising out of or in any way related to your use of this App.
+            In no event shall SnapADeal, nor any of its officers, directors, and employees, be liable to you for anything arising out of or in any way connected with your use of this App, whether such liability is under contract, tort or otherwise, and SnapADeal, including its officers, directors, and employees shall not be liable for any indirect, consequential, or special liability arising out of or in any way related to your use of this App.
           </Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>8. INDEMNIFICATION</Text>
           <Text style={styles.paragraph}>
-            You hereby indemnify to the fullest extent FindersKeepers from and against any and all liabilities, costs, demands, causes of action, damages, and expenses (including reasonable attorney's fees) arising out of or in any way related to your breach of any of the provisions of these Terms.
+            You hereby indemnify to the fullest extent SnapADeal from and against any and all liabilities, costs, demands, causes of action, damages, and expenses (including reasonable attorney's fees) arising out of or in any way related to your breach of any of the provisions of these Terms.
           </Text>
         </View>
 
@@ -115,7 +115,7 @@ export const TermsScreen: React.FC<TermsScreenProps> = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>11. CHANGES TO TERMS</Text>
           <Text style={styles.paragraph}>
-            FindersKeepers reserves the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material, we will provide at least 30 days notice prior to any new terms taking effect.
+            SnapADeal reserves the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material, we will provide at least 30 days notice prior to any new terms taking effect.
           </Text>
         </View>
 
@@ -125,7 +125,7 @@ export const TermsScreen: React.FC<TermsScreenProps> = ({ navigation }) => {
             Questions about the Terms of Service should be sent to us at:
           </Text>
           <Text style={styles.paragraph}>
-            FindersKeepers{'\n'}
+            SnapADeal{'\n'}
             Toronto, Ontario, Canada{'\n'}
             legal@finderskeepers.app
           </Text>

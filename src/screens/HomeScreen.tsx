@@ -299,6 +299,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       setUser(null);
       setIsAuthenticated(false);
       setIsMenuVisible(false);
+      navigation.replace('Auth');
     } catch (error) {
       console.error('Error signing out:', error);
       Alert.alert('Error', 'Failed to sign out. Please try again.');
@@ -358,7 +359,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       <View style={styles.authContainer}>
         <View style={styles.logo}>
           <Text style={styles.logoText}>●</Text>
-          <Text style={styles.appTitle}>FindersKeepers</Text>
+          <Text style={styles.appTitle}>SnapADeal</Text>
         </View>
         <Text style={styles.authSubtitle}>Find and keep the best deals around you</Text>
         <TouchableOpacity style={styles.authButton} onPress={handleAuth}>

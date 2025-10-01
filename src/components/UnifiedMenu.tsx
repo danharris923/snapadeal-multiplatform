@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../utils/theme';
 import { User } from '../types';
 import { CANADIAN_PROVINCES } from '../data/canadianData';
+import { searchCanadianCities } from '../data/canadianCities';
 
 interface UnifiedMenuProps {
   isOpen: boolean;
@@ -31,13 +32,15 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
   // Notification/Deal Alert Settings
   const [alertsEnabled, setAlertsEnabled] = useState(false);
   const [gpsEnabled, setGpsEnabled] = useState(false);
-  const [selectedRadius, setSelectedRadius] = useState(100);
-  const [selectedProvince, setSelectedProvince] = useState('on');
+  const [notificationArea, setNotificationArea] = useState('city');
+  const [selectedCity, setSelectedCity] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const [keywords, setKeywords] = useState<string[]>(['electronics', 'groceries']);
   const [newKeyword, setNewKeyword] = useState('');
   const [keywordSuggestions, setKeywordSuggestions] = useState<string[]>([]);
   const [showKeywordSuggestions, setShowKeywordSuggestions] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedStore, setSelectedStore] = useState('');
   const [customStore, setCustomStore] = useState('');
   const [storeSuggestions, setStoreSuggestions] = useState<string[]>([]);
@@ -48,7 +51,6 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
   const [notifications, setNotifications] = useState(true);
   const [autoPlayVideos, setAutoPlayVideos] = useState(true);
 
-  const categories = ['Electronics', 'Groceries', 'Clothing', 'Home & Garden', 'Health & Beauty', 'Sports & Outdoors'];
   const stores = ['Walmart', 'Shoppers Drug Mart', 'London Drugs', 'Save-on-Foods', 'Costco', 'Canadian Tire', 'Best Buy', 'Metro', 'Sobeys', 'Loblaws', 'The Source', 'Winners', 'HomeSense', 'IKEA', 'Home Depot'];
   const popularKeywords = ['iPhone', 'Samsung', 'laptop', 'TV', 'headphones', 'gaming', 'Nike', 'Adidas', 'coffee', 'protein', 'vitamins', 'skincare', 'furniture', 'kitchen', 'camping', 'bicycle', 'baby', 'toys', 'books', 'chocolate'];
 
@@ -68,6 +70,22 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
   const selectStoreSuggestion = (store: string) => {
     setCustomStore(store);
     setShowStoreSuggestions(false);
+  };
+
+  const handleCityInputChange = (text: string) => {
+    setSelectedCity(text);
+    if (text.length > 0) {
+      const suggestions = searchCanadianCities(text, 8);
+      setCitySuggestions(suggestions);
+      setShowCitySuggestions(suggestions.length > 0);
+    } else {
+      setShowCitySuggestions(false);
+    }
+  };
+
+  const selectCitySuggestion = (city: string) => {
+    setSelectedCity(city);
+    setShowCitySuggestions(false);
   };
 
   const handleKeywordInputChange = (text: string) => {
@@ -168,194 +186,6 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
             <Text style={styles.postDealButtonText}>📸 Post a Deal</Text>
           </TouchableOpacity>
 
-          {/* Deal Alerts / Notifications Section */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Deal Alerts & Notifications</Text>
-              <Switch
-                value={alertsEnabled}
-                onValueChange={setAlertsEnabled}
-                trackColor={{
-                  false: theme.colors.border,
-                  true: theme.colors.foreground,
-                }}
-                thumbColor={theme.colors.background}
-              />
-            </View>
-
-            {alertsEnabled && (
-              <>
-                {/* Location Settings */}
-                <View style={styles.subsection}>
-                  <Text style={styles.subsectionTitle}>Location</Text>
-
-                  <View style={styles.settingRow}>
-                    <Text style={styles.settingLabel}>GPS Tracking</Text>
-                    <Switch
-                      value={gpsEnabled}
-                      onValueChange={setGpsEnabled}
-                      trackColor={{
-                        false: theme.colors.border,
-                        true: theme.colors.foreground,
-                      }}
-                      thumbColor={theme.colors.background}
-                    />
-                  </View>
-
-                  <View style={styles.pickerGroup}>
-                    <Text style={styles.pickerLabel}>Alert Radius</Text>
-                    <View style={styles.nativePicker}>
-                      <Picker
-                        selectedValue={selectedRadius}
-                        onValueChange={setSelectedRadius}
-                        style={styles.picker}
-                        dropdownIconColor={theme.colors.foreground}
-                        mode="dropdown"
-                      >
-                        <Picker.Item label="100 km" value={100} />
-                        <Picker.Item label="City" value="city" />
-                        <Picker.Item label="Province" value="province" />
-                        <Picker.Item label="All Canada" value="all" />
-                      </Picker>
-                    </View>
-                  </View>
-
-                  <View style={styles.pickerGroup}>
-                    <Text style={styles.pickerLabel}>Province/Territory</Text>
-                    <View style={styles.nativePicker}>
-                      <Picker
-                        selectedValue={selectedProvince}
-                        onValueChange={setSelectedProvince}
-                        style={styles.picker}
-                        dropdownIconColor={theme.colors.foreground}
-                        mode="dropdown"
-                      >
-                        {CANADIAN_PROVINCES.map((province) => (
-                          <Picker.Item
-                            key={province.value}
-                            label={province.label}
-                            value={province.value}
-                          />
-                        ))}
-                      </Picker>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Filter Settings */}
-                <View style={styles.subsection}>
-                  <Text style={styles.subsectionTitle}>Filters</Text>
-
-                  <View style={styles.pickerGroup}>
-                    <Text style={styles.pickerLabel}>Category</Text>
-                    <View style={styles.nativePicker}>
-                      <Picker
-                        selectedValue={selectedCategory}
-                        onValueChange={setSelectedCategory}
-                        style={styles.picker}
-                        dropdownIconColor={theme.colors.foreground}
-                        mode="dropdown"
-                      >
-                        <Picker.Item label="All Categories" value="" />
-                        {categories.map((category) => (
-                          <Picker.Item key={category} label={category} value={category} />
-                        ))}
-                      </Picker>
-                    </View>
-                  </View>
-
-                  <View style={styles.pickerGroup}>
-                    <Text style={styles.pickerLabel}>Preferred Store</Text>
-                    <View style={styles.nativePicker}>
-                      <Picker
-                        selectedValue={selectedStore}
-                        onValueChange={setSelectedStore}
-                        style={styles.picker}
-                        dropdownIconColor={theme.colors.foreground}
-                        mode="dropdown"
-                      >
-                        <Picker.Item label="All Stores" value="" />
-                        {stores.slice(0, 10).map((store) => (
-                          <Picker.Item key={store} label={store} value={store} />
-                        ))}
-                        <Picker.Item label="Other (specify below)" value="other" />
-                      </Picker>
-                    </View>
-                    {selectedStore === 'other' && (
-                      <View style={styles.autocompleteContainer}>
-                        <TextInput
-                          style={styles.customInput}
-                          placeholder="Enter store name..."
-                          value={customStore}
-                          onChangeText={handleStoreInputChange}
-                          placeholderTextColor={theme.colors.mutedForeground}
-                        />
-                        {showStoreSuggestions && (
-                          <View style={styles.suggestionsContainer}>
-                            {storeSuggestions.map((suggestion, index) => (
-                              <TouchableOpacity
-                                key={index}
-                                style={styles.suggestionItem}
-                                onPress={() => selectStoreSuggestion(suggestion)}
-                              >
-                                <Text style={styles.suggestionText}>{suggestion}</Text>
-                              </TouchableOpacity>
-                            ))}
-                          </View>
-                        )}
-                      </View>
-                    )}
-                  </View>
-
-                  {/* Keywords */}
-                  <View style={styles.keywordsSection}>
-                    <Text style={styles.pickerLabel}>Keywords</Text>
-                    <View style={styles.keywordsContainer}>
-                      {keywords.map((keyword, index) => (
-                        <TouchableOpacity
-                          key={index}
-                          style={styles.keywordPill}
-                          onPress={() => removeKeyword(keyword)}
-                        >
-                          <Text style={styles.keywordText}>{keyword}</Text>
-                          <Text style={styles.keywordRemove}>×</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                    <View style={styles.keywordInputContainer}>
-                      <View style={styles.keywordInput}>
-                        <TextInput
-                          style={styles.keywordTextInput}
-                          placeholder="Add keyword..."
-                          value={newKeyword}
-                          onChangeText={handleKeywordInputChange}
-                          onSubmitEditing={addKeyword}
-                          placeholderTextColor={theme.colors.mutedForeground}
-                        />
-                        <TouchableOpacity style={styles.keywordAddButton} onPress={addKeyword}>
-                          <Text style={styles.keywordAddText}>+</Text>
-                        </TouchableOpacity>
-                      </View>
-                      {showKeywordSuggestions && (
-                        <View style={styles.suggestionsContainer}>
-                          {keywordSuggestions.map((suggestion, index) => (
-                            <TouchableOpacity
-                              key={index}
-                              style={styles.suggestionItem}
-                              onPress={() => selectKeywordSuggestion(suggestion)}
-                            >
-                              <Text style={styles.suggestionText}>{suggestion}</Text>
-                            </TouchableOpacity>
-                          ))}
-                        </View>
-                      )}
-                    </View>
-                  </View>
-                </View>
-              </>
-            )}
-          </View>
-
           {/* App Settings Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>App Settings</Text>
@@ -387,10 +217,10 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
             </View>
 
             <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Auto-Play Videos</Text>
+              <Text style={styles.settingLabel}>Use Geolocation</Text>
               <Switch
-                value={autoPlayVideos}
-                onValueChange={setAutoPlayVideos}
+                value={gpsEnabled}
+                onValueChange={setGpsEnabled}
                 trackColor={{
                   false: theme.colors.border,
                   true: theme.colors.foreground,
@@ -398,6 +228,88 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
                 thumbColor={theme.colors.background}
               />
             </View>
+          </View>
+
+          {/* Deal Alerts / Notifications Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Deal Alerts & Notifications</Text>
+              <Switch
+                value={alertsEnabled}
+                onValueChange={setAlertsEnabled}
+                trackColor={{
+                  false: theme.colors.border,
+                  true: theme.colors.foreground,
+                }}
+                thumbColor={theme.colors.background}
+              />
+            </View>
+
+            {alertsEnabled && (
+              <>
+                {/* Location Settings */}
+                <View style={styles.subsection}>
+                  <Text style={styles.subsectionTitle}>Location</Text>
+
+                  <View style={styles.pickerGroup}>
+                    <Text style={styles.pickerLabel}>Notification Area</Text>
+                    <View style={styles.nativePicker}>
+                      <Picker
+                        selectedValue={notificationArea}
+                        onValueChange={setNotificationArea}
+                        style={styles.picker}
+                        dropdownIconColor={theme.colors.foreground}
+                        mode="dropdown"
+                      >
+                        <Picker.Item label="City Only" value="city" />
+                        <Picker.Item label="Province" value="province" />
+                        <Picker.Item label="All Canada" value="canada" />
+                      </Picker>
+                    </View>
+                  </View>
+
+                  <View style={styles.pickerGroup}>
+                    <Text style={styles.pickerLabel}>City / Town / Postal Code</Text>
+                    <View style={styles.autocompleteContainer}>
+                      <TextInput
+                        style={styles.customInput}
+                        placeholder="Enter city, town, or postal code..."
+                        value={selectedCity || postalCode}
+                        onChangeText={(text) => {
+                          // Check if input looks like postal code (contains letters and numbers)
+                          if (/^[A-Za-z]\d[A-Za-z]/.test(text)) {
+                            setPostalCode(text.toUpperCase());
+                            setSelectedCity('');
+                            setShowCitySuggestions(false);
+                          } else {
+                            handleCityInputChange(text);
+                            setPostalCode('');
+                          }
+                        }}
+                        placeholderTextColor={theme.colors.mutedForeground}
+                        autoCapitalize="characters"
+                      />
+                      {showCitySuggestions && citySuggestions.length > 0 && (
+                        <View style={styles.suggestionsContainer}>
+                          {citySuggestions.map((suggestion, index) => (
+                            <TouchableOpacity
+                              key={index}
+                              style={styles.suggestionItem}
+                              onPress={() => selectCitySuggestion(suggestion)}
+                            >
+                              <Text style={styles.suggestionText}>{suggestion}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.helperText}>
+                      Enter city name or postal code (e.g., M5V 3A8)
+                    </Text>
+                  </View>
+                </View>
+              </>
+            )}
           </View>
 
           {/* Footer Links */}
@@ -706,6 +618,12 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.md,
     color: theme.colors.background,
     fontWeight: theme.fontWeight.bold,
+  },
+  helperText: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.mutedForeground,
+    marginTop: theme.spacing.xs,
+    fontStyle: 'italic',
   },
   footer: {
     padding: theme.spacing.lg,

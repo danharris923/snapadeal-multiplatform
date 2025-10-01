@@ -31,7 +31,7 @@ export const colors = {
   destructive: '#DC2626', // Clean red
   destructiveForeground: '#FFFFFF',
 
-  // Theme colors for FindersKeepers - minimalist palette
+  // Theme colors for SnapADeal - minimalist palette
   teal: '#000000', // Black instead of teal
   yellow: '#000000', // Black instead of yellow
   pink: '#6B7280', // Gray instead of pink

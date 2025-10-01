@@ -202,7 +202,7 @@ export const SnapDealScreen: React.FC<SnapDealScreenProps> = ({ navigation }) =>
           >
             <Text style={styles.backButtonText}>← Back</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>Share a Deal</Text>
+          <Text style={styles.title}>SnapADeal</Text>
           <Text style={styles.subtitle}>Help others find great deals</Text>
         </View>
 
