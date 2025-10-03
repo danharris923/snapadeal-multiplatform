@@ -8,6 +8,7 @@ import {
   Switch,
   TextInput,
   Linking,
+  Alert,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,6 +16,9 @@ import { theme } from '../utils/theme';
 import { User } from '../types';
 import { CANADIAN_PROVINCES } from '../data/canadianData';
 import { searchCanadianCities } from '../data/canadianCities';
+import { supabase } from '../services/supabase';
+import { LocationService } from '../services/location';
+import { notificationService } from '../services/notifications';
 
 interface UnifiedMenuProps {
   isOpen: boolean;
@@ -38,6 +42,8 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
   const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
   const [keywords, setKeywords] = useState<string[]>(['electronics', 'groceries']);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [newKeyword, setNewKeyword] = useState('');
   const [keywordSuggestions, setKeywordSuggestions] = useState<string[]>([]);
   const [showKeywordSuggestions, setShowKeywordSuggestions] = useState(false);
@@ -47,7 +53,6 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
   const [showStoreSuggestions, setShowStoreSuggestions] = useState(false);
 
   // App Settings
-  const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [autoPlayVideos, setAutoPlayVideos] = useState(true);
 
@@ -86,6 +91,101 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
   const selectCitySuggestion = (city: string) => {
     setSelectedCity(city);
     setShowCitySuggestions(false);
+  };
+
+  const handleGPSToggle = async (enabled: boolean) => {
+    setGpsEnabled(enabled);
+
+    if (enabled) {
+      setIsLoadingLocation(true);
+      try {
+        const locationService = LocationService.getInstance();
+        const location = await locationService.getCurrentLocation();
+
+        if (location) {
+          setUserLocation({ lat: location.latitude, lng: location.longitude });
+
+          // Get city and province from coordinates
+          const address = await locationService.reverseGeocode(location.latitude, location.longitude);
+          if (address) {
+            setSelectedCity(address.city);
+          }
+
+          // Save location to notification preferences if user is logged in
+          if (user?.id) {
+            // Determine radius based on notification area setting
+            let radius = 0;
+            if (notificationArea === 'city') {
+              radius = 25; // Whole city (25km radius - typical city size)
+            } else if (notificationArea === 'province') {
+              radius = 500; // Province-wide (500km radius)
+            } else {
+              radius = 5000; // All Canada (5000km - covers entire country)
+            }
+
+            await notificationService.addPreferredLocation(user.id, {
+              latitude: location.latitude,
+              longitude: location.longitude,
+              city: address?.city || 'Unknown',
+              province: address?.province || '',
+              radius: radius,
+            });
+
+            // Update proximity enabled and notification area
+            await notificationService.updateNotificationPreferences(user.id, {
+              proximity_enabled: true,
+              notification_area: notificationArea, // Save the area preference
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error getting GPS location:', error);
+        Alert.alert('Location Error', 'Failed to get your location. Please try again.');
+        setGpsEnabled(false);
+      } finally {
+        setIsLoadingLocation(false);
+      }
+    } else {
+      // Clear GPS location but keep the city if manually entered
+      setUserLocation(null);
+
+      // Disable proximity alerts
+      if (user?.id) {
+        await notificationService.updateNotificationPreferences(user.id, {
+          proximity_enabled: false,
+        });
+      }
+    }
+  };
+
+  // Update location radius when notification area changes
+  const handleNotificationAreaChange = async (area: string) => {
+    setNotificationArea(area);
+
+    // If GPS is enabled, update the radius
+    if (gpsEnabled && user?.id && userLocation) {
+      let radius = 0;
+      if (area === 'city') {
+        radius = 25; // Whole city
+      } else if (area === 'province') {
+        radius = 500; // Province-wide
+      } else {
+        radius = 5000; // All Canada
+      }
+
+      const preferences = await notificationService.getNotificationPreferences(user.id);
+      if (preferences && preferences.preferred_locations.length > 0) {
+        // Update the radius of the first location
+        const updatedLocations = preferences.preferred_locations.map((loc, index) =>
+          index === 0 ? { ...loc, radius } : loc
+        );
+
+        await notificationService.updateNotificationPreferences(user.id, {
+          preferred_locations: updatedLocations,
+          notification_area: area,
+        });
+      }
+    }
   };
 
   const handleKeywordInputChange = (text: string) => {
@@ -128,8 +228,27 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
   };
 
   const handleSignOut = async () => {
-    await AsyncStorage.removeItem('userToken');
-    onClose();
+    try {
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+
+      // Clear local storage
+      await AsyncStorage.removeItem('userToken');
+
+      // Close menu and trigger parent update
+      onClose();
+
+      // Force navigation to refresh if available
+      if (navigation) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' as never }],
+        });
+      }
+    } catch (error) {
+      console.error('Error signing out:', error);
+      Alert.alert('Error', 'Failed to sign out. Please try again.');
+    }
   };
 
   if (!isOpen) return null;
@@ -191,41 +310,29 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
             <Text style={styles.sectionTitle}>App Settings</Text>
 
             <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Dark Mode</Text>
-              <Switch
-                value={darkMode}
-                onValueChange={setDarkMode}
-                trackColor={{
-                  false: theme.colors.border,
-                  true: theme.colors.foreground,
-                }}
-                thumbColor={theme.colors.background}
-              />
-            </View>
-
-            <View style={styles.settingRow}>
               <Text style={styles.settingLabel}>Push Notifications</Text>
               <Switch
                 value={notifications}
                 onValueChange={setNotifications}
                 trackColor={{
-                  false: theme.colors.border,
-                  true: theme.colors.foreground,
+                  false: '#E4E6EB',
+                  true: theme.colors.primary,
                 }}
-                thumbColor={theme.colors.background}
+                thumbColor={notifications ? '#FFFFFF' : '#FFFFFF'}
               />
             </View>
 
             <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Use Geolocation</Text>
+              <Text style={styles.settingLabel}>Use Geolocation {isLoadingLocation ? '(Loading...)' : ''}</Text>
               <Switch
                 value={gpsEnabled}
-                onValueChange={setGpsEnabled}
+                onValueChange={handleGPSToggle}
+                disabled={isLoadingLocation}
                 trackColor={{
-                  false: theme.colors.border,
-                  true: theme.colors.foreground,
+                  false: '#E4E6EB',
+                  true: theme.colors.primary,
                 }}
-                thumbColor={theme.colors.background}
+                thumbColor={gpsEnabled ? '#FFFFFF' : '#FFFFFF'}
               />
             </View>
           </View>
@@ -238,10 +345,10 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
                 value={alertsEnabled}
                 onValueChange={setAlertsEnabled}
                 trackColor={{
-                  false: theme.colors.border,
-                  true: theme.colors.foreground,
+                  false: '#E4E6EB',
+                  true: theme.colors.primary,
                 }}
-                thumbColor={theme.colors.background}
+                thumbColor={alertsEnabled ? '#FFFFFF' : '#FFFFFF'}
               />
             </View>
 
@@ -256,7 +363,7 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
                     <View style={styles.nativePicker}>
                       <Picker
                         selectedValue={notificationArea}
-                        onValueChange={setNotificationArea}
+                        onValueChange={handleNotificationAreaChange}
                         style={styles.picker}
                         dropdownIconColor={theme.colors.foreground}
                         mode="dropdown"
@@ -273,7 +380,7 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
                     <View style={styles.autocompleteContainer}>
                       <TextInput
                         style={styles.customInput}
-                        placeholder="Enter city, town, or postal code..."
+                        placeholder={gpsEnabled ? "Auto-detected from GPS (editable)" : "Enter city, town, or postal code..."}
                         value={selectedCity || postalCode}
                         onChangeText={(text) => {
                           // Check if input looks like postal code (contains letters and numbers)
@@ -288,6 +395,7 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
                         }}
                         placeholderTextColor={theme.colors.mutedForeground}
                         autoCapitalize="characters"
+                        editable={!isLoadingLocation}
                       />
                       {showCitySuggestions && citySuggestions.length > 0 && (
                         <View style={styles.suggestionsContainer}>
@@ -304,7 +412,9 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
                       )}
                     </View>
                     <Text style={styles.helperText}>
-                      Enter city name or postal code (e.g., M5V 3A8)
+                      {gpsEnabled
+                        ? `Alerts for: ${notificationArea === 'city' ? 'City-wide' : notificationArea === 'province' ? 'Province-wide' : 'All of Canada'}`
+                        : 'Enter city name or postal code (e.g., M5V 3A8)'}
                     </Text>
                   </View>
                 </View>

@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   FlatList,
+  Switch,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { CameraService, ImageResult } from '../services/camera';
@@ -20,6 +21,7 @@ import { gamificationService } from '../services/gamification';
 import { contentModerationService } from '../services/contentModeration';
 import { DEAL_CATEGORIES, getAllStoreNames } from '../data/canadianData';
 import RNFS from 'react-native-fs';
+import { LocationService } from '../services/location';
 
 interface SnapDealScreenProps {
   navigation: any;
@@ -37,6 +39,11 @@ export const SnapDealScreen: React.FC<SnapDealScreenProps> = ({ navigation }) =>
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [storeSuggestions, setStoreSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Location fields
+  const [isLocalsOnly, setIsLocalsOnly] = useState(false);
+  const [dealLocation, setDealLocation] = useState<{ lat: number; lng: number; city: string } | null>(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   const categories = DEAL_CATEGORIES;
   const majorStores = getAllStoreNames();
@@ -57,6 +64,33 @@ export const SnapDealScreen: React.FC<SnapDealScreenProps> = ({ navigation }) =>
   const selectStoreSuggestion = (storeName: string) => {
     setStore(storeName);
     setShowSuggestions(false);
+  };
+
+  const handleGetLocation = async () => {
+    setIsGettingLocation(true);
+    try {
+      const locationService = LocationService.getInstance();
+      const location = await locationService.getCurrentLocation();
+
+      if (location) {
+        const address = await locationService.reverseGeocode(location.latitude, location.longitude);
+        setDealLocation({
+          lat: location.latitude,
+          lng: location.longitude,
+          city: address?.city || 'Unknown'
+        });
+
+        Alert.alert(
+          'Location Set',
+          `Deal location: ${address?.city || 'Unknown'}\nThis deal will ${isLocalsOnly ? 'only notify users near this location' : 'notify users with this store in their area'}.`
+        );
+      }
+    } catch (error) {
+      console.error('Error getting location:', error);
+      Alert.alert('Location Error', 'Failed to get your location. Please try again.');
+    } finally {
+      setIsGettingLocation(false);
+    }
   };
 
   const handleImagePicker = async () => {
@@ -179,6 +213,11 @@ export const SnapDealScreen: React.FC<SnapDealScreenProps> = ({ navigation }) =>
         image_url: uploadedImageUrl || null,
         submitted_by: user.id,
         is_active: true,
+        // Location fields
+        is_locals_only: isLocalsOnly,
+        deal_latitude: dealLocation?.lat || null,
+        deal_longitude: dealLocation?.lng || null,
+        deal_city: dealLocation?.city || null,
       };
 
       const { error } = await supabase
@@ -299,6 +338,46 @@ export const SnapDealScreen: React.FC<SnapDealScreenProps> = ({ navigation }) =>
                 />
               </View>
             )}
+          </View>
+
+          {/* Location Section */}
+          <View style={styles.locationSection}>
+            <View style={styles.locationHeader}>
+              <Text style={styles.sectionLabel}>Deal Location</Text>
+              <TouchableOpacity
+                style={[styles.pinButton, isGettingLocation && styles.pinButtonDisabled]}
+                onPress={handleGetLocation}
+                disabled={isGettingLocation}
+              >
+                <Text style={styles.pinButtonText}>
+                  {isGettingLocation ? '📍 Getting...' : dealLocation ? '📍 Update' : '📍 Pin Location'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {dealLocation && (
+              <Text style={styles.locationText}>📍 {dealLocation.city}</Text>
+            )}
+
+            <View style={styles.checkboxRow}>
+              <View style={styles.checkboxContainer}>
+                <Switch
+                  value={isLocalsOnly}
+                  onValueChange={setIsLocalsOnly}
+                  trackColor={{
+                    false: '#E4E6EB',
+                    true: theme.colors.primary,
+                  }}
+                  thumbColor={isLocalsOnly ? '#FFFFFF' : '#FFFFFF'}
+                />
+                <Text style={styles.checkboxLabel}>Locals Only Deal</Text>
+              </View>
+              <Text style={styles.helperText}>
+                {isLocalsOnly
+                  ? '🎯 Only users near this location will be notified'
+                  : '🌐 Users with this store in their area will be notified'}
+              </Text>
+            </View>
           </View>
 
           <View style={styles.row}>
@@ -533,5 +612,62 @@ const styles = StyleSheet.create({
     color: theme.colors.primaryForeground,
     fontSize: theme.fontSize.lg,
     fontWeight: theme.fontWeight.semibold,
+  },
+  locationSection: {
+    marginBottom: theme.spacing.lg,
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  locationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  sectionLabel: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.foreground,
+  },
+  pinButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.sm,
+  },
+  pinButtonDisabled: {
+    opacity: 0.6,
+  },
+  pinButtonText: {
+    color: theme.colors.primaryForeground,
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
+  },
+  locationText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.mutedForeground,
+    marginBottom: theme.spacing.sm,
+  },
+  checkboxRow: {
+    marginTop: theme.spacing.sm,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.xs,
+  },
+  checkboxLabel: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.foreground,
+    marginLeft: theme.spacing.sm,
+    fontWeight: theme.fontWeight.medium,
+  },
+  helperText: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.mutedForeground,
+    marginTop: theme.spacing.xs,
   },
 });

@@ -23,9 +23,9 @@ export const CompactFilter: React.FC<CompactFilterProps> = ({
 
   const sourceOptions = [
     { id: 'all', label: 'All', count: null },
-    { id: 'flipp', label: 'Flyer', count: null },
     { id: 'community', label: 'Community', count: null },
     { id: 'online', label: 'Online', count: null }, // This will be affiliate deals
+    { id: 'flipp', label: 'Flyer', count: null },
   ];
 
   const popularCategories = [

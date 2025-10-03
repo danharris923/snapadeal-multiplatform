@@ -9,6 +9,7 @@ import {
   StyleSheet,
   RefreshControl,
   Alert,
+  Image,
 } from 'react-native';
 import { Deal, User, FilterState } from '../types';
 import { DealCard } from '../components/DealCard';
@@ -376,7 +377,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         <View style={styles.headerRow}>
           {/* Compact Logo */}
           <View style={styles.compactLogo}>
-            <Text style={styles.compactLogoIcon}>●</Text>
+            <Image
+              source={require('../../icon.png')}
+              style={styles.compactLogoImage}
+              resizeMode="contain"
+            />
           </View>
 
           {/* Smart Search Bar */}
@@ -510,17 +515,18 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   compactLogo: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.primary,
+    width: 53,
+    height: 53,
+    borderRadius: 10,
+    backgroundColor: theme.colors.card,
     justifyContent: 'center',
     alignItems: 'center',
     ...theme.shadows.sm,
+    overflow: 'hidden',
   },
-  compactLogoIcon: {
-    fontSize: 20,
-    color: theme.colors.primaryForeground,
+  compactLogoImage: {
+    width: 48,
+    height: 48,
   },
   smartSearchContainer: {
     flex: 1,

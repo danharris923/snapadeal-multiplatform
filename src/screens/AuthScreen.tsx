@@ -8,6 +8,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { theme } from '../utils/theme';
 import { supabase } from '../services/supabase';
@@ -73,7 +74,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       <View style={styles.content}>
         <View style={styles.header}>
           <View style={styles.logo}>
-            <Text style={styles.logoText}>●</Text>
+            <Image
+              source={require('../../icon.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
           </View>
           <Text style={styles.title}>SnapADeal</Text>
           <Text style={styles.subtitle}>
@@ -149,17 +154,19 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.xxl,
   },
   logo: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: theme.colors.primary,
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    backgroundColor: theme.colors.card,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: theme.spacing.lg,
+    ...theme.shadows.md,
+    overflow: 'hidden',
   },
-  logoText: {
-    fontSize: 30,
-    color: theme.colors.primaryForeground,
+  logoImage: {
+    width: 70,
+    height: 70,
   },
   title: {
     fontSize: theme.fontSize.xxxl,

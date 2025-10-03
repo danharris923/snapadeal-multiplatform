@@ -123,35 +123,55 @@ export const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>10. THIRD-PARTY SERVICES</Text>
+          <Text style={styles.sectionTitle}>10. AFFILIATE DISCLOSURE</Text>
+          <Text style={styles.paragraph}>
+            SnapADeal participates in various affiliate marketing programs, which means we may earn commissions on purchases made through links in our app. We are a participant in affiliate programs including, but not limited to:
+          </Text>
+          <Text style={styles.bulletPoint}>• Amazon Associates Program</Text>
+          <Text style={styles.bulletPoint}>• Rakuten Advertising</Text>
+          <Text style={styles.bulletPoint}>• ShopStyle Collective</Text>
+          <Text style={styles.bulletPoint}>• Other retail affiliate networks</Text>
+          <Text style={styles.paragraph}>
+            When you click on affiliate links and make a purchase, we may receive a commission at no additional cost to you. These affiliate relationships do not influence our deal selection or recommendations - we only share deals we believe are valuable to our community.
+          </Text>
+          <Text style={styles.paragraph}>
+            When you leave our app through an affiliate link, cookies may be placed on your device by our affiliate partners to track your purchase and attribute the commission. These third-party cookies are governed by the respective affiliate partner's privacy policy.
+          </Text>
+          <Text style={styles.paragraph}>
+            We are required by the Federal Trade Commission (FTC) and similar regulatory bodies to disclose these affiliate relationships. This disclosure is provided in accordance with consumer protection laws and advertising standards.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>11. THIRD-PARTY SERVICES</Text>
           <Text style={styles.paragraph}>
             Our App may contain links to third-party websites or services that are not operated by us. We have no control over and assume no responsibility for the content, privacy policies, or practices of any third-party sites or services.
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>11. INTERNATIONAL DATA TRANSFERS</Text>
+          <Text style={styles.sectionTitle}>12. INTERNATIONAL DATA TRANSFERS</Text>
           <Text style={styles.paragraph}>
             Your information may be transferred to and maintained on computers located outside of your province, territory, or country where the data protection laws may differ. Your consent to this Privacy Policy represents your agreement to such transfers.
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>12. CHANGES TO THIS PRIVACY POLICY</Text>
+          <Text style={styles.sectionTitle}>13. CHANGES TO THIS PRIVACY POLICY</Text>
           <Text style={styles.paragraph}>
             We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Effective Date" at the top. You are advised to review this Privacy Policy periodically for any changes.
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>13. PRIVACY OFFICER</Text>
+          <Text style={styles.sectionTitle}>14. PRIVACY OFFICER</Text>
           <Text style={styles.paragraph}>
             We have designated a Privacy Officer who is responsible for compliance with this Privacy Policy and Canadian privacy laws.
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>14. CONTACT US</Text>
+          <Text style={styles.sectionTitle}>15. CONTACT US</Text>
           <Text style={styles.paragraph}>
             If you have any questions about this Privacy Policy or our privacy practices, please contact us at:
           </Text>
@@ -164,7 +184,7 @@ export const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>15. COMPLAINTS</Text>
+          <Text style={styles.sectionTitle}>16. COMPLAINTS</Text>
           <Text style={styles.paragraph}>
             If you have a complaint about our privacy practices, please contact our Privacy Officer first. If you are not satisfied with our response, you have the right to lodge a complaint with the Privacy Commissioner of Canada or your provincial privacy commissioner.
           </Text>
