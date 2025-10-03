@@ -1,57 +1,62 @@
 export const colors = {
-  // Minimalist black and white professional theme
-  primary: '#000000', // Pure black
-  primaryForeground: '#FFFFFF', // Pure white
+  // Facebook-inspired design system
+  primary: '#1877F2', // Facebook Blue
+  primaryForeground: '#FFFFFF', // White text on blue
 
-  // Background colors - clean white and black
-  background: '#FFFFFF', // Pure white background
-  foreground: '#000000', // Pure black text
+  // Background colors - Facebook's light gray feed
+  background: '#F0F2F5', // Facebook feed background
+  foreground: '#050505', // Nearly black text
 
-  // Card colors - subtle grays
-  card: '#FAFAFA', // Very light gray
-  cardForeground: '#000000', // Black text on cards
+  // Card colors - clean white like FB posts
+  card: '#FFFFFF', // Pure white cards
+  cardForeground: '#050505', // Dark text on cards
 
-  // Secondary: Clean gray tones
-  secondary: '#F5F5F5', // Light gray
-  secondaryForeground: '#000000', // Black on gray
+  // Secondary: Facebook gray buttons
+  secondary: '#E4E6EB', // Facebook secondary button gray
+  secondaryForeground: '#050505', // Dark text on gray
 
-  // Muted colors - professional grays
-  muted: '#F9F9F9', // Very light gray
-  mutedForeground: '#6B7280', // Medium gray for subtle text
+  // Muted colors - Facebook grays
+  muted: '#F0F2F5', // Light background gray
+  mutedForeground: '#65676B', // Facebook secondary text gray
 
-  // Accent: Minimal contrast
-  accent: '#000000', // Black accent
-  accentForeground: '#FFFFFF', // White on black
+  // Accent: Facebook blue
+  accent: '#1877F2', // Facebook blue accent
+  accentForeground: '#FFFFFF', // White on blue
 
-  // Border and input - subtle grays
-  border: '#E5E5E5', // Light gray borders
-  input: '#FAFAFA', // Very light gray inputs
+  // Border and input - Facebook style
+  border: '#CCD0D5', // Facebook border gray
+  input: '#F0F2F5', // Facebook input background
 
-  // Destructive colors - clean red
-  destructive: '#DC2626', // Clean red
+  // Destructive colors - Facebook red
+  destructive: '#E41E3F', // Facebook red
   destructiveForeground: '#FFFFFF',
 
-  // Theme colors for SnapADeal - minimalist palette
-  teal: '#000000', // Black instead of teal
-  yellow: '#000000', // Black instead of yellow
-  pink: '#6B7280', // Gray instead of pink
+  // Additional Facebook colors
+  hoverBlue: '#166FE5', // Darker blue for hover
+  successGreen: '#42B72A', // Facebook success green
+  linkBlue: '#385898', // Facebook link blue
 
-  // Dark mode colors - minimalist dark theme
+  // Theme colors for SnapADeal - Facebook-inspired
+  teal: '#1877F2', // Use Facebook blue
+  yellow: '#42B72A', // Use success green
+  pink: '#65676B', // Use muted gray
+
+  // Dark mode colors - Facebook dark theme
   dark: {
-    background: '#000000', // Pure black background
-    foreground: '#FFFFFF', // Pure white text
-    card: '#0A0A0A', // Very dark gray cards
-    cardForeground: '#FFFFFF', // White text on cards
-    primary: '#FFFFFF', // White primary in dark mode
-    primaryForeground: '#000000', // Black text on white
-    secondary: '#1A1A1A', // Dark gray secondary
-    secondaryForeground: '#FFFFFF', // White text on dark gray
-    muted: '#0F0F0F', // Very dark gray
-    mutedForeground: '#A3A3A3', // Light gray for subtle text
-    accent: '#FFFFFF', // White accent in dark mode
-    accentForeground: '#000000', // Black text on white accent
-    border: '#2A2A2A', // Dark gray borders
-    input: '#1A1A1A', // Dark gray inputs
+    background: '#18191A', // Facebook dark background
+    foreground: '#E4E6EB', // Light text
+    card: '#242526', // Dark cards
+    cardForeground: '#E4E6EB', // Light text on cards
+    primary: '#2D88FF', // Lighter blue for dark mode
+    primaryForeground: '#FFFFFF', // White text on blue
+    secondary: '#3A3B3C', // Dark secondary
+    secondaryForeground: '#E4E6EB', // Light text
+    muted: '#3A3B3C', // Dark muted
+    mutedForeground: '#B0B3B8', // Muted text
+    accent: '#2D88FF', // Accent blue
+    accentForeground: '#FFFFFF', // White on accent
+    border: '#3E4042', // Dark borders
+    input: '#3A3B3C', // Dark inputs
   },
 };
 
@@ -65,7 +70,7 @@ export const spacing = {
 };
 
 export const borderRadius = {
-  sm: 4,
+  sm: 6, // Facebook style
   md: 8,
   lg: 12,
   xl: 16,
@@ -96,29 +101,29 @@ export const shadows = {
       width: 0,
       height: 1,
     },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+    elevation: 1,
   },
   md: {
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOpacity: 0.12,
+    shadowRadius: 2,
+    elevation: 2,
   },
   lg: {
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 2,
     },
     shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowRadius: 3,
+    elevation: 3,
   },
 };
 

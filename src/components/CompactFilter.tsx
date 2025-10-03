@@ -215,7 +215,7 @@ export const CompactFilter: React.FC<CompactFilterProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.card,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
     paddingVertical: theme.spacing.sm,
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.muted,
   },
   activeTab: {
-    backgroundColor: theme.colors.foreground,
+    backgroundColor: theme.colors.primary,
   },
   tabText: {
     fontSize: theme.fontSize.sm,
@@ -244,10 +244,10 @@ const styles = StyleSheet.create({
     color: theme.colors.mutedForeground,
   },
   activeTabText: {
-    color: theme.colors.background,
+    color: theme.colors.primaryForeground,
   },
   badge: {
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.card,
     borderRadius: 10,
     minWidth: 20,
     height: 20,
@@ -265,9 +265,9 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.sm,
     marginLeft: theme.spacing.md,
     borderRadius: theme.borderRadius.sm,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.secondary,
     borderWidth: 1,
-    borderColor: theme.colors.foreground,
+    borderColor: theme.colors.border,
   },
   clearButtonText: {
     fontSize: theme.fontSize.sm,
@@ -291,8 +291,8 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
   },
   activeChip: {
-    backgroundColor: theme.colors.foreground,
-    borderColor: theme.colors.foreground,
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
   chipText: {
     fontSize: theme.fontSize.sm,
@@ -300,6 +300,6 @@ const styles = StyleSheet.create({
     color: theme.colors.mutedForeground,
   },
   activeChipText: {
-    color: theme.colors.background,
+    color: theme.colors.primaryForeground,
   },
 });

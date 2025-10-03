@@ -339,17 +339,18 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, currentUserId, onFilte
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
     marginBottom: theme.spacing.md,
     overflow: 'hidden',
+    ...theme.shadows.sm,
   },
   imageContainer: {
     position: 'relative',
     aspectRatio: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.card,
   },
   image: {
     width: '100%',
@@ -375,13 +376,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: theme.spacing.sm,
     right: theme.spacing.sm,
-    backgroundColor: theme.colors.foreground,
+    backgroundColor: theme.colors.destructive,
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.borderRadius.sm,
   },
   discountText: {
-    color: theme.colors.background,
+    color: theme.colors.card,
     fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.bold,
   },
@@ -472,15 +473,15 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.secondary,
     borderWidth: 1,
     borderColor: theme.colors.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
   voteButtonActive: {
-    backgroundColor: theme.colors.foreground,
-    borderColor: theme.colors.foreground,
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
   voteText: {
     fontSize: 12,
@@ -488,7 +489,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   voteTextActive: {
-    color: theme.colors.background,
+    color: theme.colors.card,
   },
   scoreText: {
     fontSize: theme.fontSize.xs,
@@ -498,13 +499,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   viewButton: {
-    backgroundColor: theme.colors.foreground,
+    backgroundColor: theme.colors.primary,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     borderRadius: theme.borderRadius.sm,
   },
   viewButtonText: {
-    color: theme.colors.background,
+    color: theme.colors.primaryForeground,
     fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.semibold,
   },
