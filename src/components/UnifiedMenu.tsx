@@ -67,6 +67,10 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
   const loadNotificationPreferences = async () => {
     if (!user?.id) return;
     try {
+      if (!notificationService) {
+        console.log('Notification service not available');
+        return;
+      }
       const prefs = await notificationService.getNotificationPreferences(user.id);
       if (prefs) {
         setPushNotificationsEnabled(prefs.push_enabled || false);
@@ -83,6 +87,7 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
       }
     } catch (error) {
       console.error('Error loading notification preferences:', error);
+      // Don't crash the menu if notification preferences fail to load
     }
   };
 

@@ -1,17 +1,28 @@
 import { Platform, PermissionsAndroid, Alert } from 'react-native';
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
 import { supabase } from './supabase';
 import { NotificationPreferences, LocationPreference, Deal, PushNotificationPayload } from '../types';
 
-// Configure notification handler
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+// Try to import Expo modules, but don't crash if they're not available
+let Notifications: any = null;
+let Device: any = null;
+
+try {
+  Notifications = require('expo-notifications');
+  Device = require('expo-device');
+
+  // Configure notification handler if available
+  if (Notifications) {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+  }
+} catch (error) {
+  console.log('Expo notifications not available (native modules not linked). Push notifications disabled.');
+}
 
 class NotificationService {
   private pushToken: string | null = null;
@@ -41,6 +52,15 @@ class NotificationService {
   // Initialize push notifications
   async initializePushNotifications(userId: string): Promise<void> {
     try {
+      // Check if Expo modules are available
+      if (!Notifications || !Device) {
+        Alert.alert(
+          'Not Available',
+          'Push notifications are not yet configured. They will be available in a future update.'
+        );
+        return;
+      }
+
       // Check if device supports push notifications
       if (!Device.isDevice) {
         Alert.alert(
