@@ -1,28 +1,7 @@
 import { Platform, PermissionsAndroid, Alert } from 'react-native';
+import messaging from '@react-native-firebase/messaging';
 import { supabase } from './supabase';
 import { NotificationPreferences, LocationPreference, Deal, PushNotificationPayload } from '../types';
-
-// Try to import Expo modules, but don't crash if they're not available
-let Notifications: any = null;
-let Device: any = null;
-
-try {
-  Notifications = require('expo-notifications');
-  Device = require('expo-device');
-
-  // Configure notification handler if available
-  if (Notifications) {
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-      }),
-    });
-  }
-} catch (error) {
-  console.log('Expo notifications not available (native modules not linked). Push notifications disabled.');
-}
 
 class NotificationService {
   private pushToken: string | null = null;
@@ -49,37 +28,16 @@ class NotificationService {
     }
   }
 
-  // Initialize push notifications
+  // Initialize push notifications with Firebase Cloud Messaging
   async initializePushNotifications(userId: string): Promise<void> {
     try {
-      // Check if Expo modules are available
-      if (!Notifications || !Device) {
-        Alert.alert(
-          'Not Available',
-          'Push notifications are not yet configured. They will be available in a future update.'
-        );
-        return;
-      }
+      // Request permission for notifications
+      const authStatus = await messaging().requestPermission();
+      const enabled =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
-      // Check if device supports push notifications
-      if (!Device.isDevice) {
-        Alert.alert(
-          'Not Available',
-          'Push notifications only work on physical devices, not in simulators.'
-        );
-        return;
-      }
-
-      // Request permissions
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-
-      if (finalStatus !== 'granted') {
+      if (!enabled) {
         Alert.alert(
           'Permission Denied',
           'Enable notifications in your device settings to get deal alerts!'
@@ -87,11 +45,9 @@ class NotificationService {
         return;
       }
 
-      // Get Expo push token
-      const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId: 'your-expo-project-id', // Replace with actual project ID
-      });
-      this.pushToken = tokenData.data;
+      // Get FCM token
+      const fcmToken = await messaging().getToken();
+      this.pushToken = fcmToken;
 
       // Save token to database
       await supabase
@@ -99,10 +55,30 @@ class NotificationService {
         .update({ push_token: this.pushToken })
         .eq('id', userId);
 
-      console.log('Push notifications initialized for user:', userId);
-      console.log('Expo Push Token:', this.pushToken);
+      console.log('Firebase push notifications initialized for user:', userId);
+      console.log('FCM Token:', this.pushToken);
+
+      // Listen for token refresh
+      messaging().onTokenRefresh(async (newToken) => {
+        this.pushToken = newToken;
+        await supabase
+          .from('users')
+          .update({ push_token: newToken })
+          .eq('id', userId);
+        console.log('FCM Token refreshed:', newToken);
+      });
+
+      // Handle foreground notifications
+      messaging().onMessage(async remoteMessage => {
+        console.log('Foreground notification received:', remoteMessage);
+        Alert.alert(
+          remoteMessage.notification?.title || 'New Notification',
+          remoteMessage.notification?.body || ''
+        );
+      });
+
     } catch (error) {
-      console.error('Error initializing push notifications:', error);
+      console.error('Error initializing Firebase push notifications:', error);
       Alert.alert(
         'Error',
         'Failed to initialize push notifications. Please try again.'

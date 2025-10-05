@@ -1,4 +1,7 @@
 {
   "name": "SnapSaveRN",
-  "displayName": "SnapSave"
+  "displayName": "SnapSave",
+  "android": {
+    "package": "com.anonymous.snapsavern"
+  }
 }

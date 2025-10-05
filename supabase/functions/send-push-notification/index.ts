@@ -14,28 +14,49 @@ serve(async (req) => {
       )
     }
 
-    // Send to Expo Push API
-    const response = await fetch('https://exp.host/--/api/v2/push/send', {
+    // Get Firebase Server Key from environment variable
+    const firebaseServerKey = Deno.env.get('FIREBASE_SERVER_KEY')
+    if (!firebaseServerKey) {
+      console.error('FIREBASE_SERVER_KEY environment variable not set')
+      return new Response(
+        JSON.stringify({ success: false, error: 'Firebase configuration missing. Please set FIREBASE_SERVER_KEY in Supabase Edge Function secrets.' }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Send to Firebase Cloud Messaging (FCM) API
+    const response = await fetch('https://fcm.googleapis.com/fcm/send', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        'Authorization': `key=${firebaseServerKey}`,
       },
       body: JSON.stringify({
         to: pushToken,
-        title: title || 'New Notification',
-        body: body || '',
+        notification: {
+          title: title || 'New Notification',
+          body: body || '',
+          sound: 'default',
+          priority: 'high',
+        },
         data: data || {},
-        sound: 'default',
-        priority: 'high',
-        channelId: 'deal-alerts',
+        android: {
+          priority: 'high',
+          notification: {
+            channelId: 'deal-alerts',
+            sound: 'default',
+          }
+        }
       })
     })
 
     const result = await response.json()
 
     if (!response.ok) {
-      console.error('Expo Push API error:', result)
+      console.error('FCM API error:', result)
       return new Response(
         JSON.stringify({ success: false, error: 'Failed to send notification', details: result }),
         {
