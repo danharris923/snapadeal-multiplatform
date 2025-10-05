@@ -19,6 +19,7 @@ import { theme } from '../utils/theme';
 import { supabase } from '../services/supabase';
 import { gamificationService } from '../services/gamification';
 import { contentModerationService } from '../services/contentModeration';
+import { notificationService } from '../services/notifications';
 import { DEAL_CATEGORIES, getAllStoreNames } from '../data/canadianData';
 import RNFS from 'react-native-fs';
 import { LocationService } from '../services/location';
@@ -220,9 +221,11 @@ export const SnapDealScreen: React.FC<SnapDealScreenProps> = ({ navigation }) =>
         deal_city: dealLocation?.city || null,
       };
 
-      const { error } = await supabase
+      const { data: newDeal, error } = await supabase
         .from('deals')
-        .insert([dealData]);
+        .insert([dealData])
+        .select()
+        .single();
 
       if (error) {
         console.error('Error submitting deal:', error);
@@ -239,6 +242,17 @@ export const SnapDealScreen: React.FC<SnapDealScreenProps> = ({ navigation }) =>
         } catch (pointsError) {
           console.error('Error awarding points (non-critical):', pointsError);
           // Don't block the success flow if points fail
+        }
+
+        // Trigger notifications for matching users
+        if (newDeal) {
+          try {
+            await notificationService.checkDealNotificationTriggers(newDeal);
+            console.log('✅ Notification triggers checked for deal:', newDeal.id);
+          } catch (notificationError) {
+            console.error('Error checking notification triggers (non-critical):', notificationError);
+            // Don't block the success flow if notifications fail
+          }
         }
 
         Alert.alert(

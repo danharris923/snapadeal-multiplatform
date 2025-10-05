@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,13 +6,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   Linking,
-  Alert,
 } from 'react-native';
 import { Deal } from '../types';
 import { theme } from '../utils/theme';
-import { gamificationService } from '../services/gamification';
-import { contentModerationService } from '../services/contentModeration';
-import { supabase } from '../services/supabase';
 import { DealModal } from './DealModal';
 
 interface DealCardProps {
@@ -22,139 +18,7 @@ interface DealCardProps {
 }
 
 export const DealCard: React.FC<DealCardProps> = ({ deal, currentUserId, onFilterByStore }) => {
-  const [userVote, setUserVote] = useState<'upvote' | 'downvote' | null>(null);
-  const [voteCount, setVoteCount] = useState({
-    upvotes: deal.upvotes || 0,
-    downvotes: deal.downvotes || 0,
-    score: deal.score || 0,
-  });
-  const [isVoting, setIsVoting] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [isReporting, setIsReporting] = useState(false);
-
-  useEffect(() => {
-    if (currentUserId && deal.id) {
-      loadUserVote();
-    }
-  }, [currentUserId, deal.id]);
-
-  const loadUserVote = async () => {
-    if (!currentUserId) return;
-    try {
-      const vote = await gamificationService.getUserVote(deal.id, currentUserId);
-      setUserVote(vote);
-    } catch (error) {
-      console.error('Error loading user vote:', error);
-    }
-  };
-
-  const handleVote = async (voteType: 'upvote' | 'downvote') => {
-    if (!currentUserId || isVoting) return;
-
-    setIsVoting(true);
-    try {
-      // Optimistic update
-      const newUserVote = userVote === voteType ? null : voteType;
-      setUserVote(newUserVote);
-
-      let newUpvotes = voteCount.upvotes;
-      let newDownvotes = voteCount.downvotes;
-
-      // Remove previous vote
-      if (userVote === 'upvote') newUpvotes--;
-      if (userVote === 'downvote') newDownvotes--;
-
-      // Add new vote
-      if (newUserVote === 'upvote') newUpvotes++;
-      if (newUserVote === 'downvote') newDownvotes++;
-
-      setVoteCount({
-        upvotes: newUpvotes,
-        downvotes: newDownvotes,
-        score: newUpvotes - newDownvotes,
-      });
-
-      // Send to backend
-      if (newUserVote) {
-        await gamificationService.handleVote(
-          deal.id,
-          currentUserId,
-          deal.submitted_by || '',
-          newUserVote
-        );
-      }
-    } catch (error) {
-      console.error('Error voting:', error);
-      // Revert optimistic update
-      loadUserVote();
-      setVoteCount({
-        upvotes: deal.upvotes || 0,
-        downvotes: deal.downvotes || 0,
-        score: deal.score || 0,
-      });
-    } finally {
-      setIsVoting(false);
-    }
-  };
-
-  const handleReport = async () => {
-    if (!currentUserId || isReporting) return;
-
-    Alert.alert(
-      'Report Deal',
-      'Why are you reporting this deal?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Spam',
-          onPress: () => submitReport('spam'),
-        },
-        {
-          text: 'Scam/Fake',
-          onPress: () => submitReport('scam'),
-        },
-        {
-          text: 'Inappropriate',
-          onPress: () => submitReport('inappropriate'),
-        },
-        {
-          text: 'No Longer Available',
-          onPress: () => submitReport('fake'),
-        },
-      ],
-      { cancelable: true }
-    );
-  };
-
-  const submitReport = async (reason: 'spam' | 'scam' | 'inappropriate' | 'fake' | 'other') => {
-    if (!currentUserId) return;
-
-    setIsReporting(true);
-    try {
-      const result = await contentModerationService.reportContent(
-        deal.id,
-        currentUserId,
-        reason
-      );
-
-      if (result.success) {
-        Alert.alert(
-          'Thank You',
-          'Your report has been submitted. Our team will review it shortly.'
-        );
-      } else {
-        Alert.alert('Error', result.error || 'Failed to submit report');
-      }
-    } catch (error) {
-      console.error('Error reporting deal:', error);
-      Alert.alert('Error', 'An unexpected error occurred');
-    } finally {
-      setIsReporting(false);
-    }
-  };
 
   // Safety check for deal data
   if (!deal || typeof deal !== 'object') {
@@ -267,61 +131,11 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, currentUserId, onFilte
             )}
           </View>
 
-          <View style={styles.actionsRow}>
-            {/* Report button for community deals */}
-            {deal.source === 'community' && currentUserId && (
-              <TouchableOpacity
-                style={styles.reportButton}
-                onPress={handleReport}
-                disabled={isReporting}
-              >
-                <Text style={styles.reportButtonText}>⚠️</Text>
-              </TouchableOpacity>
-            )}
-
-            <View style={styles.actions}>
-            {/* Voting buttons for community deals */}
-            {deal.source === 'community' && currentUserId && (
-              <View style={styles.voteContainer}>
-                <TouchableOpacity
-                  style={[
-                    styles.voteButton,
-                    userVote === 'upvote' && styles.voteButtonActive,
-                  ]}
-                  onPress={() => handleVote('upvote')}
-                  disabled={isVoting}
-                >
-                  <Text style={[
-                    styles.voteText,
-                    userVote === 'upvote' && styles.voteTextActive,
-                  ]}>▲</Text>
-                </TouchableOpacity>
-
-                <Text style={styles.scoreText}>{voteCount.score}</Text>
-
-                <TouchableOpacity
-                  style={[
-                    styles.voteButton,
-                    userVote === 'downvote' && styles.voteButtonActive,
-                  ]}
-                  onPress={() => handleVote('downvote')}
-                  disabled={isVoting}
-                >
-                  <Text style={[
-                    styles.voteText,
-                    userVote === 'downvote' && styles.voteTextActive,
-                  ]}>▼</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {deal.deal_url && (
-              <TouchableOpacity style={styles.viewButton} onPress={handleViewDeal}>
-                <Text style={styles.viewButtonText}>View Deal</Text>
-              </TouchableOpacity>
-            )}
-            </View>
-          </View>
+          {deal.deal_url && (
+            <TouchableOpacity style={styles.viewButton} onPress={handleViewDeal}>
+              <Text style={styles.viewButtonText}>View Deal</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
       </TouchableOpacity>
@@ -439,64 +253,6 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     color: theme.colors.mutedForeground,
     textDecorationLine: 'line-through',
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.xs,
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: theme.spacing.sm,
-  },
-  reportButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: theme.colors.muted,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  reportButtonText: {
-    fontSize: 14,
-  },
-  voteContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  voteButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: theme.colors.secondary,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  voteButtonActive: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  voteText: {
-    fontSize: 12,
-    color: theme.colors.mutedForeground,
-    fontWeight: 'bold',
-  },
-  voteTextActive: {
-    color: theme.colors.card,
-  },
-  scoreText: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.foreground,
-    fontWeight: '600',
-    minWidth: 20,
-    textAlign: 'center',
   },
   viewButton: {
     backgroundColor: theme.colors.primary,

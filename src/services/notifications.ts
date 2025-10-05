@@ -1,6 +1,17 @@
 import { Platform, PermissionsAndroid, Alert } from 'react-native';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
 import { supabase } from './supabase';
 import { NotificationPreferences, LocationPreference, Deal, PushNotificationPayload } from '../types';
+
+// Configure notification handler
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 class NotificationService {
   private pushToken: string | null = null;
@@ -30,32 +41,53 @@ class NotificationService {
   // Initialize push notifications
   async initializePushNotifications(userId: string): Promise<void> {
     try {
-      const hasPermission = await this.requestPermissions();
-      if (!hasPermission) {
+      // Check if device supports push notifications
+      if (!Device.isDevice) {
         Alert.alert(
-          'Notifications Disabled',
-          'Enable notifications in settings to get deal alerts near you!'
+          'Not Available',
+          'Push notifications only work on physical devices, not in simulators.'
         );
         return;
       }
 
-      // Here you would typically use:
-      // - @react-native-firebase/messaging for Firebase
-      // - react-native-push-notification for local notifications
-      // - @react-native-async-storage/async-storage for token storage
+      // Request permissions
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
 
-      // For now, we'll simulate a token
-      this.pushToken = `push_token_${userId}_${Date.now()}`;
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
 
-      // Save token to user profile
+      if (finalStatus !== 'granted') {
+        Alert.alert(
+          'Permission Denied',
+          'Enable notifications in your device settings to get deal alerts!'
+        );
+        return;
+      }
+
+      // Get Expo push token
+      const tokenData = await Notifications.getExpoPushTokenAsync({
+        projectId: 'your-expo-project-id', // Replace with actual project ID
+      });
+      this.pushToken = tokenData.data;
+
+      // Save token to database
       await supabase
         .from('users')
         .update({ push_token: this.pushToken })
         .eq('id', userId);
 
       console.log('Push notifications initialized for user:', userId);
+      console.log('Expo Push Token:', this.pushToken);
     } catch (error) {
       console.error('Error initializing push notifications:', error);
+      Alert.alert(
+        'Error',
+        'Failed to initialize push notifications. Please try again.'
+      );
+      throw error;
     }
   }
 
@@ -281,11 +313,29 @@ class NotificationService {
       return false;
     }
 
-    // Check proximity (this would require store location data)
+    // Check location matching
     if (userPreferences.proximity_enabled && userPreferences.preferred_locations.length > 0) {
-      // For now, we'll skip proximity check since we need store coordinates
-      // In a real implementation, you'd have a stores table with lat/lng
-      console.log('Proximity check skipped - need store location data');
+      // Check if deal has location information
+      if (!deal.city && !deal.province) {
+        // No location info on deal, skip location check
+        return true;
+      }
+
+      const userLoc = userPreferences.preferred_locations[0];
+      const notificationArea = (userPreferences as any).notification_area || 'city';
+
+      if (notificationArea === 'city') {
+        // Must match city
+        if (deal.city && userLoc.city && deal.city.toLowerCase() !== userLoc.city.toLowerCase()) {
+          return false;
+        }
+      } else if (notificationArea === 'province') {
+        // Must match province
+        if (deal.province && userLoc.province && deal.province.toLowerCase() !== userLoc.province.toLowerCase()) {
+          return false;
+        }
+      }
+      // 'canada' or 'all' = no location filtering, notify for all deals
     }
 
     return true;
@@ -301,20 +351,34 @@ class NotificationService {
       const discountText = deal.discount_percentage ? ` ${deal.discount_percentage}% off` : '';
       const body = `${deal.title}${discountText} at ${deal.store}`;
 
-      const payload: PushNotificationPayload = {
-        title,
-        body,
-        data: {
-          deal_id: deal.id,
-          type: 'deal_alert',
-          store: deal.store,
-          discount: deal.discount_percentage?.toString(),
-        },
-      };
+      const pushToken = userPreferences.users.push_token;
 
-      // Here you would send the actual push notification
-      // using Firebase Cloud Messaging or similar service
-      console.log('Would send notification:', payload);
+      if (!pushToken) {
+        console.log('No push token for user:', userPreferences.user_id);
+        return;
+      }
+
+      // Send via Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke('send-push-notification', {
+        body: {
+          pushToken,
+          title,
+          body,
+          data: {
+            dealId: deal.id,
+            type: 'deal_alert',
+            store: deal.store,
+            discount: deal.discount_percentage?.toString(),
+          },
+        },
+      });
+
+      if (error) {
+        console.error('Error calling edge function:', error);
+        return;
+      }
+
+      console.log('Notification sent successfully:', data);
 
       // Log notification trigger
       await supabase

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -34,6 +34,7 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
   navigation,
 }) => {
   // Notification/Deal Alert Settings
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
   const [alertsEnabled, setAlertsEnabled] = useState(false);
   const [gpsEnabled, setGpsEnabled] = useState(false);
   const [notificationArea, setNotificationArea] = useState('city');
@@ -55,6 +56,35 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
   // App Settings
   const [notifications, setNotifications] = useState(true);
   const [autoPlayVideos, setAutoPlayVideos] = useState(true);
+
+  // Load notification preferences on mount
+  useEffect(() => {
+    if (user?.id && isOpen) {
+      loadNotificationPreferences();
+    }
+  }, [user, isOpen]);
+
+  const loadNotificationPreferences = async () => {
+    if (!user?.id) return;
+    try {
+      const prefs = await notificationService.getNotificationPreferences(user.id);
+      if (prefs) {
+        setPushNotificationsEnabled(prefs.push_enabled || false);
+        setAlertsEnabled(prefs.deal_alerts_enabled || false);
+        setGpsEnabled(prefs.proximity_enabled || false);
+        setNotificationArea(prefs.notification_area || 'city');
+
+        // Load location if exists
+        if (prefs.preferred_locations && prefs.preferred_locations.length > 0) {
+          const loc = prefs.preferred_locations[0];
+          setSelectedCity(loc.city || '');
+          setUserLocation({ lat: loc.latitude, lng: loc.longitude });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading notification preferences:', error);
+    }
+  };
 
   const stores = ['Walmart', 'Shoppers Drug Mart', 'London Drugs', 'Save-on-Foods', 'Costco', 'Canadian Tire', 'Best Buy', 'Metro', 'Sobeys', 'Loblaws', 'The Source', 'Winners', 'HomeSense', 'IKEA', 'Home Depot'];
   const popularKeywords = ['iPhone', 'Samsung', 'laptop', 'TV', 'headphones', 'gaming', 'Nike', 'Adidas', 'coffee', 'protein', 'vitamins', 'skincare', 'furniture', 'kitchen', 'camping', 'bicycle', 'baby', 'toys', 'books', 'chocolate'];
@@ -220,6 +250,36 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
     setKeywords(keywords.filter(keyword => keyword !== keywordToRemove));
   };
 
+  const handlePushNotificationsToggle = async (enabled: boolean) => {
+    if (!user?.id) return;
+
+    setPushNotificationsEnabled(enabled);
+
+    try {
+      if (enabled) {
+        // Initialize push notifications and get token
+        await notificationService.initializePushNotifications(user.id);
+      }
+
+      // Update preferences
+      await notificationService.updateNotificationPreferences(user.id, {
+        push_enabled: enabled,
+        deal_alerts_enabled: enabled,
+      });
+
+      Alert.alert(
+        enabled ? 'Notifications Enabled' : 'Notifications Disabled',
+        enabled
+          ? 'You will receive push notifications for deals in your selected area.'
+          : 'You will no longer receive push notifications.'
+      );
+    } catch (error) {
+      console.error('Error toggling push notifications:', error);
+      setPushNotificationsEnabled(!enabled); // Revert on error
+      Alert.alert('Error', 'Failed to update notification settings. Please try again.');
+    }
+  };
+
   const handlePostDeal = () => {
     onClose();
     if (navigation) {
@@ -354,6 +414,23 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
 
             {alertsEnabled && (
               <>
+                {/* Push Notifications Toggle */}
+                <View style={styles.settingRow}>
+                  <View style={styles.settingLabelContainer}>
+                    <Text style={styles.settingLabel}>Enable Push Notifications</Text>
+                    <Text style={styles.settingHint}>Get notified about new deals in your area</Text>
+                  </View>
+                  <Switch
+                    value={pushNotificationsEnabled}
+                    onValueChange={handlePushNotificationsToggle}
+                    trackColor={{
+                      false: '#E4E6EB',
+                      true: theme.colors.primary,
+                    }}
+                    thumbColor={pushNotificationsEnabled ? '#FFFFFF' : '#FFFFFF'}
+                  />
+                </View>
+
                 {/* Location Settings */}
                 <View style={styles.subsection}>
                   <Text style={styles.subsectionTitle}>Location</Text>
@@ -445,7 +522,7 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
                 <Text style={[styles.footerLink, styles.signOutLink]}>Sign Out</Text>
               </TouchableOpacity>
             )}
-            <Text style={styles.versionText}>ver# 20251001_2204-secure</Text>
+            <Text style={styles.versionText}>ver# 20251003_0106-locations</Text>
           </View>
 
           <View style={styles.bottomPadding} />
@@ -609,9 +686,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: theme.spacing.sm,
   },
+  settingLabelContainer: {
+    flex: 1,
+    marginRight: theme.spacing.md,
+  },
   settingLabel: {
     fontSize: theme.fontSize.md,
     color: theme.colors.foreground,
+  },
+  settingHint: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.mutedForeground,
+    marginTop: 2,
   },
   pickerGroup: {
     marginTop: theme.spacing.sm,

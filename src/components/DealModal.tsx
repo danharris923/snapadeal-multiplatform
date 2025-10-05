@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,14 @@ import {
   Linking,
   Dimensions,
   Platform,
+  Alert,
 } from 'react-native';
 import Modal from 'react-native-modal';
 import { Deal } from '../types';
 import { theme } from '../utils/theme';
 import { locationService } from '../services/location';
+import { gamificationService } from '../services/gamification';
+import { contentModerationService } from '../services/contentModeration';
 
 interface DealModalProps {
   isVisible: boolean;
@@ -32,6 +35,147 @@ export const DealModal: React.FC<DealModalProps> = ({
   currentUserId,
   onFilterByStore,
 }) => {
+  const [userVote, setUserVote] = useState<'upvote' | 'downvote' | null>(null);
+  const [voteCount, setVoteCount] = useState({
+    upvotes: deal?.upvotes || 0,
+    downvotes: deal?.downvotes || 0,
+    score: deal?.score || 0,
+  });
+  const [isVoting, setIsVoting] = useState(false);
+  const [isReporting, setIsReporting] = useState(false);
+
+  useEffect(() => {
+    if (currentUserId && deal?.id) {
+      loadUserVote();
+    }
+    // Reset vote count when deal changes
+    if (deal) {
+      setVoteCount({
+        upvotes: deal.upvotes || 0,
+        downvotes: deal.downvotes || 0,
+        score: deal.score || 0,
+      });
+    }
+  }, [currentUserId, deal?.id]);
+
+  const loadUserVote = async () => {
+    if (!currentUserId || !deal) return;
+    try {
+      const vote = await gamificationService.getUserVote(deal.id, currentUserId);
+      setUserVote(vote);
+    } catch (error) {
+      console.error('Error loading user vote:', error);
+    }
+  };
+
+  const handleVote = async (voteType: 'upvote' | 'downvote') => {
+    if (!currentUserId || isVoting || !deal) return;
+
+    setIsVoting(true);
+    try {
+      // Optimistic update
+      const newUserVote = userVote === voteType ? null : voteType;
+      setUserVote(newUserVote);
+
+      let newUpvotes = voteCount.upvotes;
+      let newDownvotes = voteCount.downvotes;
+
+      // Remove previous vote
+      if (userVote === 'upvote') newUpvotes--;
+      if (userVote === 'downvote') newDownvotes--;
+
+      // Add new vote
+      if (newUserVote === 'upvote') newUpvotes++;
+      if (newUserVote === 'downvote') newDownvotes++;
+
+      setVoteCount({
+        upvotes: newUpvotes,
+        downvotes: newDownvotes,
+        score: newUpvotes - newDownvotes,
+      });
+
+      // Send to backend
+      if (newUserVote) {
+        await gamificationService.handleVote(
+          deal.id,
+          currentUserId,
+          deal.submitted_by || '',
+          newUserVote
+        );
+      }
+    } catch (error) {
+      console.error('Error voting:', error);
+      // Revert optimistic update
+      loadUserVote();
+      setVoteCount({
+        upvotes: deal.upvotes || 0,
+        downvotes: deal.downvotes || 0,
+        score: deal.score || 0,
+      });
+    } finally {
+      setIsVoting(false);
+    }
+  };
+
+  const handleReport = async () => {
+    if (!currentUserId || isReporting || !deal) return;
+
+    Alert.alert(
+      'Report Deal',
+      'Why are you reporting this deal?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Spam',
+          onPress: () => submitReport('spam'),
+        },
+        {
+          text: 'Scam/Fake',
+          onPress: () => submitReport('scam'),
+        },
+        {
+          text: 'Inappropriate',
+          onPress: () => submitReport('inappropriate'),
+        },
+        {
+          text: 'No Longer Available',
+          onPress: () => submitReport('fake'),
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const submitReport = async (reason: 'spam' | 'scam' | 'inappropriate' | 'fake' | 'other') => {
+    if (!currentUserId || !deal) return;
+
+    setIsReporting(true);
+    try {
+      const result = await contentModerationService.reportContent(
+        deal.id,
+        currentUserId,
+        reason
+      );
+
+      if (result.success) {
+        Alert.alert(
+          'Thank You',
+          'Your report has been submitted. Our team will review it shortly.'
+        );
+      } else {
+        Alert.alert('Error', result.error || 'Failed to submit report');
+      }
+    } catch (error) {
+      console.error('Error reporting deal:', error);
+      Alert.alert('Error', 'An unexpected error occurred');
+    } finally {
+      setIsReporting(false);
+    }
+  };
+
   if (!deal) return null;
 
   const handleViewDeal = () => {
@@ -199,6 +343,51 @@ export const DealModal: React.FC<DealModalProps> = ({
                 <Text style={styles.mapButtonText}>Find Store</Text>
               </TouchableOpacity>
             </View>
+
+            {/* Voting and Reporting Section */}
+            {deal.source === 'community' && currentUserId && (
+              <View style={styles.engagementSection}>
+                <TouchableOpacity
+                  style={[
+                    styles.voteButton,
+                    userVote === 'upvote' && styles.voteButtonActive,
+                  ]}
+                  onPress={() => handleVote('upvote')}
+                  disabled={isVoting}
+                >
+                  <Text style={[
+                    styles.voteText,
+                    userVote === 'upvote' && styles.voteTextActive,
+                  ]}>▲</Text>
+                </TouchableOpacity>
+
+                <View style={styles.scoreContainer}>
+                  <Text style={styles.scoreText}>{voteCount.score}</Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[
+                    styles.voteButton,
+                    userVote === 'downvote' && styles.voteButtonActive,
+                  ]}
+                  onPress={() => handleVote('downvote')}
+                  disabled={isVoting}
+                >
+                  <Text style={[
+                    styles.voteText,
+                    userVote === 'downvote' && styles.voteTextActive,
+                  ]}>▼</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.reportButtonSmall}
+                  onPress={handleReport}
+                  disabled={isReporting}
+                >
+                  <Text style={styles.reportIconSmall}>⚠️</Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
             {/* Action Buttons */}
             <View style={styles.actions}>
@@ -411,6 +600,64 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.medium,
     color: theme.colors.foreground,
+  },
+  engagementSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.muted,
+    borderRadius: theme.borderRadius.sm,
+    padding: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: theme.spacing.sm,
+  },
+  voteButton: {
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.sm,
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  voteButtonActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  voteText: {
+    fontSize: 16,
+    color: theme.colors.mutedForeground,
+    fontWeight: 'bold',
+  },
+  voteTextActive: {
+    color: theme.colors.card,
+  },
+  scoreContainer: {
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.xs,
+    minWidth: 40,
+  },
+  scoreText: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.foreground,
+  },
+  reportButtonSmall: {
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.sm,
+    width: 28,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: theme.spacing.xs,
+  },
+  reportIconSmall: {
+    fontSize: 14,
   },
   actions: {
     gap: theme.spacing.sm,
