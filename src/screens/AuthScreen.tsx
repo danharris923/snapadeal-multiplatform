@@ -97,7 +97,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
           </View>
           <Text style={styles.title}>SnapADeal</Text>
           <Text style={styles.subtitle}>
-            {isLogin ? 'Welcome back!' : 'Join the community'}
+            find local deals fast!
           </Text>
         </View>
 
@@ -169,10 +169,10 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.xxl,
   },
   logo: {
-    width: 80,
-    height: 80,
-    borderRadius: 12,
-    backgroundColor: theme.colors.card,
+    width: 100,
+    height: 100,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: theme.spacing.lg,
@@ -180,8 +180,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   logoImage: {
-    width: 70,
-    height: 70,
+    width: 100,
+    height: 100,
   },
   title: {
     fontSize: theme.fontSize.xxxl,

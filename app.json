@@ -1,7 +1,7 @@
 {
-  "name": "SnapSaveRN",
-  "displayName": "SnapSave",
+  "name": "SnapADeal",
+  "displayName": "SnapADeal",
   "android": {
-    "package": "com.anonymous.snapsavern"
+    "package": "com.snapadeal"
   }
 }

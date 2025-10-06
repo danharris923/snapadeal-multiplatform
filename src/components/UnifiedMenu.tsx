@@ -9,6 +9,7 @@ import {
   TextInput,
   Linking,
   Alert,
+  Platform,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -37,8 +38,10 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
   const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
   const [alertsEnabled, setAlertsEnabled] = useState(false);
   const [gpsEnabled, setGpsEnabled] = useState(false);
-  const [notificationArea, setNotificationArea] = useState('city');
+  const [selectedProvince, setSelectedProvince] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
+  const [detectedCity, setDetectedCity] = useState('');
+  const [radiusKm, setRadiusKm] = useState(50);
   const [postalCode, setPostalCode] = useState('');
   const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
   const [showCitySuggestions, setShowCitySuggestions] = useState(false);
@@ -76,13 +79,21 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
         setPushNotificationsEnabled(prefs.push_enabled || false);
         setAlertsEnabled(prefs.deal_alerts_enabled || false);
         setGpsEnabled(prefs.proximity_enabled || false);
-        setNotificationArea(prefs.notification_area || 'city');
 
         // Load location if exists
         if (prefs.preferred_locations && prefs.preferred_locations.length > 0) {
           const loc = prefs.preferred_locations[0];
-          setSelectedCity(loc.city || '');
+          // Filter out "Unknown" values
+          const cityValue = loc.city && loc.city !== 'Unknown' ? loc.city : '';
+          setSelectedCity(cityValue);
+          setSelectedProvince(loc.province || '');
           setUserLocation({ lat: loc.latitude, lng: loc.longitude });
+          setRadiusKm(loc.radius || 50);
+
+          // If location is detected, set it as detected city
+          if (prefs.proximity_enabled && cityValue) {
+            setDetectedCity(cityValue);
+          }
         }
       }
     } catch (error) {
@@ -143,33 +154,23 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
           // Get city and province from coordinates
           const address = await locationService.reverseGeocode(location.latitude, location.longitude);
           if (address) {
+            setDetectedCity(address.city);
             setSelectedCity(address.city);
+            setSelectedProvince(address.province || '');
           }
 
-          // Save location to notification preferences if user is logged in
+          // Save location to notification preferences with default 50km radius
           if (user?.id) {
-            // Determine radius based on notification area setting
-            let radius = 0;
-            if (notificationArea === 'city') {
-              radius = 25; // Whole city (25km radius - typical city size)
-            } else if (notificationArea === 'province') {
-              radius = 500; // Province-wide (500km radius)
-            } else {
-              radius = 5000; // All Canada (5000km - covers entire country)
-            }
-
             await notificationService.addPreferredLocation(user.id, {
               latitude: location.latitude,
               longitude: location.longitude,
-              city: address?.city || 'Unknown',
+              city: address?.city || '',
               province: address?.province || '',
-              radius: radius,
+              radius: radiusKm,
             });
 
-            // Update proximity enabled and notification area
             await notificationService.updateNotificationPreferences(user.id, {
               proximity_enabled: true,
-              notification_area: notificationArea, // Save the area preference
             });
           }
         }
@@ -181,10 +182,10 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
         setIsLoadingLocation(false);
       }
     } else {
-      // Clear GPS location but keep the city if manually entered
+      // Turn off GPS, keep manual selections
       setUserLocation(null);
+      setDetectedCity('');
 
-      // Disable proximity alerts
       if (user?.id) {
         await notificationService.updateNotificationPreferences(user.id, {
           proximity_enabled: false,
@@ -193,31 +194,20 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
     }
   };
 
-  // Update location radius when notification area changes
-  const handleNotificationAreaChange = async (area: string) => {
-    setNotificationArea(area);
+  // Update radius when slider changes
+  const handleRadiusChange = async (newRadius: number) => {
+    setRadiusKm(newRadius);
 
-    // If GPS is enabled, update the radius
-    if (gpsEnabled && user?.id && userLocation) {
-      let radius = 0;
-      if (area === 'city') {
-        radius = 25; // Whole city
-      } else if (area === 'province') {
-        radius = 500; // Province-wide
-      } else {
-        radius = 5000; // All Canada
-      }
-
+    // Update saved preferences if user is logged in and has a location
+    if (user?.id && (gpsEnabled || selectedCity)) {
       const preferences = await notificationService.getNotificationPreferences(user.id);
       if (preferences && preferences.preferred_locations.length > 0) {
-        // Update the radius of the first location
         const updatedLocations = preferences.preferred_locations.map((loc, index) =>
-          index === 0 ? { ...loc, radius } : loc
+          index === 0 ? { ...loc, radius: newRadius } : loc
         );
 
         await notificationService.updateNotificationPreferences(user.id, {
           preferred_locations: updatedLocations,
-          notification_area: area,
         });
       }
     }
@@ -370,25 +360,33 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
             <Text style={styles.postDealButtonText}>📸 Post a Deal</Text>
           </TouchableOpacity>
 
-          {/* App Settings Section */}
+          {/* Deal Alerts / Notifications Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>App Settings</Text>
+            <Text style={[styles.sectionTitle, { marginBottom: theme.spacing.md }]}>Deal Alerts & Notifications</Text>
 
+            {/* Push Notifications Toggle */}
             <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Push Notifications</Text>
+              <View style={styles.settingLabelContainer}>
+                <Text style={styles.settingLabel}>Enable Push Notifications</Text>
+                <Text style={styles.settingHint}>Get notified about new deals in your area</Text>
+              </View>
               <Switch
-                value={notifications}
-                onValueChange={setNotifications}
+                value={pushNotificationsEnabled}
+                onValueChange={handlePushNotificationsToggle}
                 trackColor={{
                   false: '#E4E6EB',
                   true: theme.colors.primary,
                 }}
-                thumbColor={notifications ? '#FFFFFF' : '#FFFFFF'}
+                thumbColor={pushNotificationsEnabled ? '#FFFFFF' : '#FFFFFF'}
               />
             </View>
 
+            {/* Step 1: Use Current Location Toggle */}
             <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Use Geolocation {isLoadingLocation ? '(Loading...)' : ''}</Text>
+              <View style={styles.settingLabelContainer}>
+                <Text style={styles.settingLabel}>Use my current location {isLoadingLocation ? '(Loading...)' : ''}</Text>
+                <Text style={styles.settingHint}>Automatically detect your location for local deals</Text>
+              </View>
               <Switch
                 value={gpsEnabled}
                 onValueChange={handleGPSToggle}
@@ -400,107 +398,61 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
                 thumbColor={gpsEnabled ? '#FFFFFF' : '#FFFFFF'}
               />
             </View>
-          </View>
 
-          {/* Deal Alerts / Notifications Section */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Deal Alerts & Notifications</Text>
-              <Switch
-                value={alertsEnabled}
-                onValueChange={setAlertsEnabled}
-                trackColor={{
-                  false: '#E4E6EB',
-                  true: theme.colors.primary,
-                }}
-                thumbColor={alertsEnabled ? '#FFFFFF' : '#FFFFFF'}
-              />
-            </View>
+            {/* Show detected city if GPS is on */}
+            {gpsEnabled && detectedCity && (
+              <View style={styles.detectedLocationContainer}>
+                <Text style={styles.detectedLocationText}>📍 Detected: {detectedCity}</Text>
+                <TouchableOpacity onPress={() => setGpsEnabled(false)}>
+                  <Text style={styles.changeButton}>Change</Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
-            {alertsEnabled && (
-              <>
-                {/* Push Notifications Toggle */}
-                <View style={styles.settingRow}>
-                  <View style={styles.settingLabelContainer}>
-                    <Text style={styles.settingLabel}>Enable Push Notifications</Text>
-                    <Text style={styles.settingHint}>Get notified about new deals in your area</Text>
+            {/* Step 2: Manual Picker (shown when GPS is off) */}
+            {!gpsEnabled && (
+              <View style={styles.manualPickerContainer}>
+                {/* City/Region Picker with Autocomplete */}
+                <View style={styles.pickerGroup}>
+                  <Text style={styles.pickerLabel}>City / Region</Text>
+                  <View style={styles.autocompleteContainer}>
+                    <TextInput
+                      style={styles.customInput}
+                      placeholder="Enter city or postal code..."
+                      value={selectedCity || postalCode}
+                      onChangeText={(text) => {
+                        // Check if input looks like postal code (starts with letter, digit, letter pattern)
+                        if (/^[A-Za-z]\d[A-Za-z]/.test(text.trim())) {
+                          setPostalCode(text.toUpperCase());
+                          setSelectedCity('');
+                          setShowCitySuggestions(false);
+                        } else {
+                          handleCityInputChange(text);
+                          setPostalCode('');
+                        }
+                      }}
+                      placeholderTextColor={theme.colors.mutedForeground}
+                      autoCapitalize="characters"
+                    />
+                    {showCitySuggestions && citySuggestions.length > 0 && (
+                      <View style={styles.suggestionsContainer}>
+                        {citySuggestions.map((suggestion, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            style={styles.suggestionItem}
+                            onPress={() => selectCitySuggestion(suggestion)}
+                          >
+                            <Text style={styles.suggestionText}>{suggestion}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
                   </View>
-                  <Switch
-                    value={pushNotificationsEnabled}
-                    onValueChange={handlePushNotificationsToggle}
-                    trackColor={{
-                      false: '#E4E6EB',
-                      true: theme.colors.primary,
-                    }}
-                    thumbColor={pushNotificationsEnabled ? '#FFFFFF' : '#FFFFFF'}
-                  />
+                  <Text style={styles.helperText}>
+                    e.g., Toronto, M5V 3A8, or Greater Toronto Area
+                  </Text>
                 </View>
-
-                {/* Location Settings */}
-                <View style={styles.subsection}>
-                  <Text style={styles.subsectionTitle}>Location</Text>
-
-                  <View style={styles.pickerGroup}>
-                    <Text style={styles.pickerLabel}>Notification Area</Text>
-                    <View style={styles.nativePicker}>
-                      <Picker
-                        selectedValue={notificationArea}
-                        onValueChange={handleNotificationAreaChange}
-                        style={styles.picker}
-                        dropdownIconColor={theme.colors.foreground}
-                        mode="dropdown"
-                      >
-                        <Picker.Item label="City Only" value="city" />
-                        <Picker.Item label="Province" value="province" />
-                        <Picker.Item label="All Canada" value="canada" />
-                      </Picker>
-                    </View>
-                  </View>
-
-                  <View style={styles.pickerGroup}>
-                    <Text style={styles.pickerLabel}>City / Town / Postal Code</Text>
-                    <View style={styles.autocompleteContainer}>
-                      <TextInput
-                        style={styles.customInput}
-                        placeholder={gpsEnabled ? "Auto-detected from GPS (editable)" : "Enter city, town, or postal code..."}
-                        value={selectedCity || postalCode}
-                        onChangeText={(text) => {
-                          // Check if input looks like postal code (contains letters and numbers)
-                          if (/^[A-Za-z]\d[A-Za-z]/.test(text)) {
-                            setPostalCode(text.toUpperCase());
-                            setSelectedCity('');
-                            setShowCitySuggestions(false);
-                          } else {
-                            handleCityInputChange(text);
-                            setPostalCode('');
-                          }
-                        }}
-                        placeholderTextColor={theme.colors.mutedForeground}
-                        autoCapitalize="characters"
-                        editable={!isLoadingLocation}
-                      />
-                      {showCitySuggestions && citySuggestions.length > 0 && (
-                        <View style={styles.suggestionsContainer}>
-                          {citySuggestions.map((suggestion, index) => (
-                            <TouchableOpacity
-                              key={index}
-                              style={styles.suggestionItem}
-                              onPress={() => selectCitySuggestion(suggestion)}
-                            >
-                              <Text style={styles.suggestionText}>{suggestion}</Text>
-                            </TouchableOpacity>
-                          ))}
-                        </View>
-                      )}
-                    </View>
-                    <Text style={styles.helperText}>
-                      {gpsEnabled
-                        ? `Alerts for: ${notificationArea === 'city' ? 'City-wide' : notificationArea === 'province' ? 'Province-wide' : 'All of Canada'}`
-                        : 'Enter city name or postal code (e.g., M5V 3A8)'}
-                    </Text>
-                  </View>
-                </View>
-              </>
+              </View>
             )}
           </View>
 
@@ -527,7 +479,7 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
                 <Text style={[styles.footerLink, styles.signOutLink]}>Sign Out</Text>
               </TouchableOpacity>
             )}
-            <Text style={styles.versionText}>ver# 20251003_0106-locations</Text>
+            <Text style={styles.versionText}>ver# 20251006_0145-ui-redesign</Text>
           </View>
 
           <View style={styles.bottomPadding} />
@@ -556,14 +508,11 @@ const styles = StyleSheet.create({
   },
   menuContainer: {
     position: 'absolute',
+    left: 0,
     right: 0,
     top: 0,
     bottom: 0,
-    width: '85%',
-    maxWidth: 350,
     backgroundColor: theme.colors.background,
-    borderLeftWidth: 1,
-    borderLeftColor: theme.colors.border,
   },
   scrollView: {
     flex: 1,
@@ -825,6 +774,60 @@ const styles = StyleSheet.create({
     color: theme.colors.mutedForeground,
     marginTop: theme.spacing.xs,
     fontStyle: 'italic',
+  },
+  detectedLocationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: theme.colors.secondary,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.sm,
+    marginTop: theme.spacing.sm,
+  },
+  detectedLocationText: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.foreground,
+    fontWeight: theme.fontWeight.medium,
+  },
+  changeButton: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.primary,
+    fontWeight: theme.fontWeight.semibold,
+  },
+  manualPickerContainer: {
+    marginTop: theme.spacing.md,
+    gap: theme.spacing.sm,
+  },
+  radiusContainer: {
+    marginTop: theme.spacing.md,
+    paddingTop: theme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  radiusHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  radiusLabel: {
+    fontSize: theme.fontSize.md,
+    color: theme.colors.foreground,
+    fontWeight: theme.fontWeight.medium,
+  },
+  radiusValue: {
+    fontSize: theme.fontSize.lg,
+    color: theme.colors.primary,
+    fontWeight: theme.fontWeight.bold,
+  },
+  sliderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: theme.spacing.sm,
+  },
+  sliderLabel: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.mutedForeground,
   },
   footer: {
     padding: theme.spacing.lg,

@@ -359,10 +359,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     return (
       <View style={styles.authContainer}>
         <View style={styles.logo}>
-          <Text style={styles.logoText}>●</Text>
+          <Image
+            source={require('../../icon.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
           <Text style={styles.appTitle}>SnapADeal</Text>
         </View>
-        <Text style={styles.authSubtitle}>Find and keep the best deals around you</Text>
+        <Text style={styles.authSubtitle}>find local deals fast!</Text>
         <TouchableOpacity style={styles.authButton} onPress={handleAuth}>
           <Text style={styles.authButtonText}>Get Started</Text>
         </TouchableOpacity>
@@ -472,9 +476,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing.xl,
   },
-  logoText: {
-    fontSize: 60,
-    marginBottom: theme.spacing.sm,
+  logoImage: {
+    width: 100,
+    height: 100,
+    marginBottom: theme.spacing.md,
   },
   appTitle: {
     fontSize: theme.fontSize.xxxl,
