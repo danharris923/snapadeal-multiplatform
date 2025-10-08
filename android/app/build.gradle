@@ -18,8 +18,8 @@ react {
     enableBundleCompression = (findProperty('android.enableBundleCompression') ?: false).toBoolean()
     // Use Expo CLI to bundle the app, this ensures the Metro config
     // works correctly with Expo projects.
-    cliFile = new File(["node", "--print", "require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })"].execute(null, rootDir).text.trim())
-    bundleCommand = "export:embed"
+    // cliFile = new File(["node", "--print", "require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })"].execute(null, rootDir).text.trim())
+    // bundleCommand = "export:embed"
 
     /* Folders */
      //   The root of your project, i.e. where "package.json" lives. Default is '../..'
@@ -93,8 +93,8 @@ android {
         applicationId 'com.snapadeal'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "0.0.1"
+        versionCode 2
+        versionName "202510080408"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
@@ -152,6 +152,8 @@ android {
         }
     }
 }
+
+apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")
 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin

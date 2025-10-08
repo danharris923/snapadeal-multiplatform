@@ -1,7 +1,24 @@
 {
+  "expo": {
+    "name": "SnapADeal",
+    "slug": "snapadeal",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "android": {
+      "package": "com.snapadeal",
+      "adaptiveIcon": {
+        "foregroundImage": "./android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+        "backgroundColor": "#ffffff"
+      }
+    }
+  },
   "name": "SnapADeal",
-  "displayName": "SnapADeal",
-  "android": {
-    "package": "com.snapadeal"
-  }
+  "displayName": "SnapADeal"
 }

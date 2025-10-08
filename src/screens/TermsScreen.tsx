@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { theme } from '../utils/theme';
 
 interface TermsScreenProps {
@@ -17,7 +18,8 @@ export const TermsScreen: React.FC<TermsScreenProps> = ({ navigation }) => {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
+          <Icon name="arrow-back" size={24} color={theme.colors.accent} />
+          <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Terms of Service</Text>
       </View>
@@ -151,8 +153,11 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
     marginBottom: theme.spacing.sm,
+    gap: 8,
   },
   backButtonText: {
     color: theme.colors.accent,

@@ -14,6 +14,7 @@ import {
   Switch,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { CameraService, ImageResult } from '../services/camera';
 import { theme } from '../utils/theme';
 import { supabase } from '../services/supabase';
@@ -285,7 +286,7 @@ export const SnapDealScreen: React.FC<SnapDealScreenProps> = ({ navigation }) =>
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.backButtonText}>← Back</Text>
+            <Icon name="close-outline" size={28} color={theme.colors.foreground} />
           </TouchableOpacity>
           <Text style={styles.title}>SnapADeal</Text>
           <Text style={styles.subtitle}>Help others find great deals</Text>

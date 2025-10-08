@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../utils/theme';
 import { User } from '../types';
@@ -321,7 +322,7 @@ export const UnifiedMenu: React.FC<UnifiedMenuProps> = ({
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Menu</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>✕</Text>
+              <Icon name="close-outline" size={28} color={theme.colors.foreground} />
             </TouchableOpacity>
           </View>
 

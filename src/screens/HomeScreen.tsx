@@ -11,6 +11,7 @@ import {
   Alert,
   Image,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { Deal, User, FilterState } from '../types';
 import { DealCard } from '../components/DealCard';
 import { HamburgerMenu } from '../components/HamburgerMenu';
@@ -407,17 +408,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               style={styles.shareButton}
               onPress={handleShareDeal}
             >
-              <Text style={styles.shareButtonIcon}>+</Text>
+              <Icon name="camera-outline" size={24} color={theme.colors.foreground} />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.hamburgerButton}
               onPress={handleMenuPress}
             >
-              <View style={styles.hamburgerIcon}>
-                <View style={styles.hamburgerLine} />
-                <View style={styles.hamburgerLine} />
-                <View style={styles.hamburgerLine} />
-              </View>
+              <Icon name="menu-outline" size={26} color={theme.colors.foreground} />
             </TouchableOpacity>
           </View>
         </View>
@@ -565,10 +562,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...theme.shadows.sm,
   },
-  shareButtonIcon: {
-    fontSize: 20,
-    color: theme.colors.foreground,
-  },
   hamburgerButton: {
     width: 44,
     height: 44,
@@ -579,17 +572,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
     ...theme.shadows.sm,
-  },
-  hamburgerIcon: {
-    width: 18,
-    height: 14,
-    justifyContent: 'space-between',
-  },
-  hamburgerLine: {
-    width: 18,
-    height: 2,
-    backgroundColor: theme.colors.foreground,
-    borderRadius: 1,
   },
   listContent: {
     padding: theme.spacing.md,
