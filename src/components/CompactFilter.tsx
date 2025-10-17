@@ -19,22 +19,13 @@ export const CompactFilter: React.FC<CompactFilterProps> = ({
   filters,
   onFiltersChange,
 }) => {
-  const [activeFilterType, setActiveFilterType] = useState<'source' | 'category' | 'store'>('source');
+  const [activeFilterType, setActiveFilterType] = useState<'source' | 'store'>('source');
 
   const sourceOptions = [
     { id: 'all', label: 'All', count: null },
     { id: 'community', label: 'Community', count: null },
     { id: 'online', label: 'Online', count: null }, // This will be affiliate deals
     { id: 'flipp', label: 'Flyer', count: null },
-  ];
-
-  const popularCategories = [
-    'Electronics',
-    'Fashion',
-    'Home & Garden',
-    'Health & Beauty',
-    'Groceries',
-    'Sports & Outdoors',
   ];
 
   const popularStores = [
@@ -52,17 +43,6 @@ export const CompactFilter: React.FC<CompactFilterProps> = ({
     onFiltersChange({
       ...filters,
       source: source === 'all' ? 'all' : source,
-    });
-  };
-
-  const handleCategoryFilter = (category: string) => {
-    const newCategories = filters.categories.includes(category)
-      ? filters.categories.filter(c => c !== category)
-      : [...filters.categories, category];
-
-    onFiltersChange({
-      ...filters,
-      categories: newCategories,
     });
   };
 
@@ -106,20 +86,6 @@ export const CompactFilter: React.FC<CompactFilterProps> = ({
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.tab, activeFilterType === 'category' && styles.activeTab]}
-            onPress={() => setActiveFilterType('category')}
-          >
-            <Text style={[styles.tabText, activeFilterType === 'category' && styles.activeTabText]}>
-              Category
-            </Text>
-            {filters.categories.length > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{filters.categories.length}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
             style={[styles.tab, activeFilterType === 'store' && styles.activeTab]}
             onPress={() => setActiveFilterType('store')}
           >
@@ -159,28 +125,6 @@ export const CompactFilter: React.FC<CompactFilterProps> = ({
                   filters.source === option.id && styles.activeChipText
                 ]}>
                   {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {activeFilterType === 'category' && (
-          <View style={styles.optionsContainer}>
-            {popularCategories.map((category) => (
-              <TouchableOpacity
-                key={category}
-                style={[
-                  styles.chip,
-                  filters.categories.includes(category) && styles.activeChip
-                ]}
-                onPress={() => handleCategoryFilter(category)}
-              >
-                <Text style={[
-                  styles.chipText,
-                  filters.categories.includes(category) && styles.activeChipText
-                ]}>
-                  {category}
                 </Text>
               </TouchableOpacity>
             ))}
