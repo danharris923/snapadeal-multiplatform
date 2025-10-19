@@ -94,4 +94,3 @@ app_*.png
 
 # Platform-specific directories (only on platform branches)
 android/
-ios/
