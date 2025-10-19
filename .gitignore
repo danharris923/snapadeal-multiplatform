@@ -95,3 +95,27 @@ app_*.png
 # Platform-specific directories (only on platform branches)
 android/
 ios/
+
+# Additional build artifacts and caches
+# Expo cache and build outputs
+.expo-shared/
+dist/
+
+# Android build outputs (extra protection)
+android/app/build/
+android/.gradle/
+
+# iOS build outputs (extra protection)  
+ios/build/
+ios/Pods/
+
+# Emulator and SDK data
+.android/
+
+# Build logs
+*.log
+build.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
