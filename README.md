@@ -95,3 +95,65 @@ To learn more about React Native, take a look at the following resources:
 - [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
 - [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
 - [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+
+# Security & Environment Setup
+
+## ⚠️ CRITICAL: Secret Management
+
+This project uses sensitive credentials for Firebase, Supabase, and other services. **NEVER commit secrets to git.**
+
+### First-Time Setup
+
+1. **Copy the environment template:**
+   ```sh
+   cp .env.example .env
+   ```
+
+2. **Add your secrets to `.env`:**
+   - `SUPABASE_URL` - Your Supabase project URL
+   - `SUPABASE_ANON_KEY` - Your Supabase anonymous key
+   - `SUPABASE_SERVICE_ROLE_KEY` - Your Supabase service role key (for admin scripts)
+
+3. **Download Firebase configuration files:**
+   - **Android:** Download `google-services.json` from Firebase Console
+     - Place in `android/app/google-services.json`
+   - **iOS:** Download `GoogleService-Info.plist` from Firebase Console
+     - Place in `ios/GoogleService-Info.plist`
+
+4. **Download Google Cloud service account key (if needed):**
+   - Download from Google Cloud Console
+   - Save as `snapadeal-service-account.json` in project root
+   - This file is already in `.gitignore`
+
+### Files That Should NEVER Be Committed
+
+- `.env` - Environment variables with secrets
+- `*-service-account*.json` - Google Cloud service account keys
+- `google-services.json` - Firebase Android configuration
+- `GoogleService-Info.plist` - Firebase iOS configuration
+- Any script files with hardcoded API keys or tokens
+
+These are all protected by `.gitignore`, but be vigilant!
+
+### Security Incident Response
+
+If you accidentally commit secrets:
+1. **Immediately rotate/revoke the exposed credentials**
+2. See `SECURITY_INCIDENT.md` for detailed remediation steps
+3. Consider cleaning git history or creating a new repository
+
+## Branch Strategy
+
+This repository uses an enterprise Git workflow:
+
+- **main** - Stable production code (source only, no platform folders)
+- **dev** - Active development branch
+- **android** - Android platform branch (source + android/ folder)
+- **ios** - iOS platform branch (source + ios/ folder)
+
+When developing:
+1. Work in `dev` branch
+2. Test your changes
+3. Merge to `main` when stable
+4. Merge `main` to `android`/`ios` for platform-specific builds
+
